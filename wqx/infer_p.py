@@ -170,7 +170,7 @@ if __name__ == '__main__':
     get_val_p(
         mode='val',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v1.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v1/epoch_10.pth',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v1/epoch_8.pth',
     )
 
 
