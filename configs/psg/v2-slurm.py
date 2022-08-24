@@ -345,4 +345,4 @@ mp_start_method = 'fork'
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-t-p4-w7-224_lsj_8x2_50e_coco-panoptic_20220326_224553-fc567107.pth'
 resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v1'
+work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v2'
