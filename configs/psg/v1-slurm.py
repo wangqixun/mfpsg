@@ -159,7 +159,7 @@ model = dict(
         # max_per_image is for instance segmentation.
         max_per_image=100,
         iou_thr=0.8,
-        object_mask_thr=0.3,
+        object_mask_thr=0.8,
         # In Mask2Former's panoptic postprocessing,
         # it will filter mask area where score is less than 0.5 .
         filter_low_score=True),
