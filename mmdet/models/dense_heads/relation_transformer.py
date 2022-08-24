@@ -32,6 +32,7 @@ class BertTransformer(BaseModule):
         loss_weight=1.,
         num_entity_max=30,
         positional_encoding=None,
+        use_background_feature=False,
     ):
         super().__init__()
         self.num_cls = num_cls
@@ -56,6 +57,7 @@ class BertTransformer(BaseModule):
         if positional_encoding is not None:
             self.positional_encoding_cfg = positional_encoding
             self.postional_encoding = build_positional_encoding(positional_encoding)
+        self.use_background_feature = use_background_feature
 
 
 

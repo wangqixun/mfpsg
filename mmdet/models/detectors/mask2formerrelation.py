@@ -154,9 +154,14 @@ class MaskFormerRelation(SingleStageDetector):
 
                     # thing feature
                     feature_thing = feature[None] * gt_mask[:, None]
-                    cls_feature_thing = self.rela_cls_embed(gt_label.reshape([-1, ]))
                     embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+                    cls_feature_thing = self.rela_cls_embed(gt_label.reshape([-1, ]))
                     embedding_thing = embedding_thing + cls_feature_thing
+                    if self.relationship_head.use_background_feature:
+                        background_mask = 1 - gt_mask
+                        background_feature = feature[None] * background_mask[:, None]
+                        background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+                        embedding_thing = embedding_thing + background_feature
                 else:
                     embedding_thing = None
 
@@ -181,6 +186,11 @@ class MaskFormerRelation(SingleStageDetector):
                     cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))
                     embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
                     embedding_staff = embedding_staff + cls_feature_staff
+                    if self.relationship_head.use_background_feature:
+                        background_mask = 1 - mask_staff
+                        background_feature = feature[None] * background_mask[:, None]
+                        background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+                        embedding_staff = embedding_staff + background_feature
                 else:
                     embedding_staff = None
 
@@ -230,7 +240,6 @@ class MaskFormerRelation(SingleStageDetector):
                 relationship_output = self.relationship_head(relationship_input_embedding, mask_attention)
                 loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
                 losses.update(loss_relationship)
-
 
         return losses
 
