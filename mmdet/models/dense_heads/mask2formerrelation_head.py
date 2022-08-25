@@ -534,7 +534,7 @@ class MaskFormerRelationHead(AnchorFreeHead):
 
         return losses, mask_features
 
-    def simple_test(self, feats, img_metas, **kwargs):
+    def simple_test(self, feats, img_metas, need_mask_features=True, **kwargs):
         """Test without augmentaton.
 
         Args:
@@ -563,8 +563,10 @@ class MaskFormerRelationHead(AnchorFreeHead):
             mode='bilinear',
             align_corners=False)
 
-        return mask_cls_results, mask_pred_results, mask_features
-
+        if need_mask_features:
+            return mask_cls_results, mask_pred_results, mask_features
+        else:
+            return mask_cls_results, mask_pred_results
 
 @HEADS.register_module()
 class Mask2FormerRelationHead(MaskFormerRelationHead):

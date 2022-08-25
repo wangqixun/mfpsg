@@ -161,7 +161,7 @@ class MaskFormerRelation(SingleStageDetector):
                     if self.use_background_feature:
                         background_mask = 1 - gt_mask
                         background_feature = feature[None] * background_mask[:, None]
-                        background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+                        background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
                         embedding_thing = embedding_thing + background_feature
                 else:
                     embedding_thing = None
@@ -284,8 +284,9 @@ class MaskFormerRelation(SingleStageDetector):
                 ]
         """
         feats = self.extract_feat(imgs)
-        mask_cls_results, mask_pred_results, mask_features = self.panoptic_head.simple_test(
-            feats, img_metas, **kwargs)
+        need_mask_features = False
+        mask_cls_results, mask_pred_results = self.panoptic_head.simple_test(
+            feats, img_metas, need_mask_features, **kwargs)
         results = self.panoptic_fusion_head.simple_test(
             mask_cls_results, mask_pred_results, img_metas, **kwargs)
         for i in range(len(results)):
@@ -466,8 +467,9 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
 
     def simple_test(self, imgs, img_metas, **kwargs):
         feats = self.extract_feat(imgs)
+        need_mask_features = True
         mask_cls_results, mask_pred_results, mask_features = self.panoptic_head.simple_test(
-            feats, img_metas, **kwargs)
+            feats, img_metas, need_mask_features, **kwargs)
         results = self.panoptic_fusion_head.simple_test(
             mask_cls_results, mask_pred_results, img_metas, **kwargs)
 
