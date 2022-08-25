@@ -190,7 +190,7 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1600, 400), (1600, 1400)],
+        img_scale=[(1600//1.5, 400//1.5), (1600//1.5, 1400//1.5)],
         # img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),
@@ -215,7 +215,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1333, 800),
+        img_scale=(1333//1.5, 800//1.5),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
