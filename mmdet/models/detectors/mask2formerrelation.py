@@ -139,8 +139,7 @@ class MaskFormerRelation(SingleStageDetector):
                 meta_info = img_metas[idx]
 
                 masks = meta_info['masks']
-                if len(masks) > self.num_entity_max:
-                    masks = masks[:self.num_entity_max]
+                masks = masks[:self.num_entity_max]
 
                 # feature
                 feature = mask_features[idx]
@@ -149,7 +148,7 @@ class MaskFormerRelation(SingleStageDetector):
                 gt_mask = gt_masks[idx].to_ndarray()
                 gt_mask = gt_mask[:self.num_entity_max]
                 gt_mask = torch.from_numpy(gt_mask).to(device).to(dtype)
-                gt_label = gt_labels[idx]
+                gt_label = gt_labels[idx][len(gt_mask)]
                 if gt_mask.shape[0] != 0:
                     h_img, w_img = meta_info['img_shape'][:2]
                     gt_mask = F.interpolate(gt_mask[:, None], size=(h_img, w_img))[:, 0]
