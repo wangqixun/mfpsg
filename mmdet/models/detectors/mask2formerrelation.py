@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from IPython import embed
-
+from mmdet.utils import AvoidCUDAOOM
 
 @DETECTORS.register_module()
 class MaskFormerRelation(SingleStageDetector):
@@ -85,6 +85,7 @@ class MaskFormerRelation(SingleStageDetector):
         outs = self.panoptic_head(x, img_metas)
         return outs
 
+    @AvoidCUDAOOM.retry_if_cuda_oom
     def forward_train(self,
                       img,
                       img_metas,
