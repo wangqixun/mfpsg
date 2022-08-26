@@ -250,6 +250,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         return losses
 
+    @AvoidCUDAOOM.retry_if_cuda_oom
     def simple_test(self, imgs, img_metas, **kwargs):
         """Test without augmentation.
 
@@ -467,6 +468,12 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
         entity_embedding = (feature_map * mask_tensor).sum(dim=[2, 3]) / (mask_tensor.sum(dim=[2, 3]) + 1e-8)
         entity_embedding = entity_embedding[None]
         entity_embedding = entity_embedding + cls_entity_embedding
+        
+        if self.use_background_feature:
+            background_mask = 1 - mask_tensor
+            background_feature = (feature_map * background_mask).sum(dim=[2, 3]) / (background_mask.sum(dim=[2, 3]) + 1e-8)
+            background_feature = background_feature[None]
+            entity_embedding = entity_embedding + background_feature
 
         return entity_embedding, entity_id_list, entity_score_list
 

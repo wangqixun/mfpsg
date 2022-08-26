@@ -111,8 +111,6 @@ def get_val_p(mode, cfg, ckp):
         entityid_list = rela_results['entityid_list']
         relation = rela_results['relation']
 
-        # print(np.unique(pan_results))
-        # print(entityid_list)
 
         img_output = np.zeros_like(img)
         segments_info = []
@@ -144,9 +142,10 @@ def get_val_p(mode, cfg, ckp):
         cv2.imwrite(f'{jpg_output_dir}/{cur_nb}.png', img_output)
 
         if len(relation) == 0:
-            relation = [[0, 0, -1]]
+            relation = [[0, 0, 0]]
         if len(segments_info) == 0:
-            segments_info = [dict(category_id=0, id=rgb2id((0, 0, 0)))]
+            r, g, b = random.choices(range(0, 255), k=3)
+            segments_info = [dict(category_id=1, id=rgb2id((r, g, b)))]
 
         single_result_dict = dict(
             # image_id=image_id,
