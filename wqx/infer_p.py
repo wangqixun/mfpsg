@@ -168,7 +168,7 @@ if __name__ == '__main__':
     # get_tra_val_test_list()
     # get_test_p()
     get_val_p(
-        mode='val',
+        mode='v3',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v3-slurm.py',
         ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v3/epoch_30.pth',
     )
