@@ -173,7 +173,7 @@ if __name__ == '__main__':
         ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v3/epoch_30.pth',
     )
 
-
+    # best v1 ep30
 
 
 

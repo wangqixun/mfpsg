@@ -4,16 +4,17 @@ num_relation = 56
 num_things_classes = 80
 num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
-depths = [2, 2, 6, 2]
+depths = [2, 2, 18, 2]
 
 model = dict(
     type='Mask2FormerRelation',
     backbone=dict(
         type='SwinTransformer',
-        embed_dims=96,
+        pretrain_img_size=384,
+        embed_dims=128,
         depths=depths,
-        num_heads=[3, 6, 12, 24],
-        window_size=7,
+        num_heads=[4, 8, 16, 32],
+        window_size=12,
         mlp_ratio=4,
         qkv_bias=True,
         qk_scale=None,
@@ -29,7 +30,7 @@ model = dict(
     ),
     panoptic_head=dict(
         type='Mask2FormerRelationHead',
-        in_channels=[96, 192, 384, 768],  # pass to pixel_decoder inside
+        in_channels=[128, 256, 512, 1024],  # pass to pixel_decoder inside
         strides=[4, 8, 16, 32],
         feat_channels=256,
         out_channels=256,
@@ -131,6 +132,7 @@ model = dict(
         cls_qk_size=128,
         loss_weight=50,
         num_entity_max=50,
+        use_background_feature=False,
     ),
     panoptic_fusion_head=dict(
         type='MaskFormerFusionHead',
@@ -169,7 +171,7 @@ model = dict(
 dataset_type = 'CocoPanopticDataset'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-# image_size = (1024//2, 1024//2)
+image_size = (1024//2, 1024//2)
 train_pipeline = [
     dict(type='LoadImageFromFile', to_float32=True),
     # dict(type='PhotoMetricDistortion'),
@@ -190,7 +192,7 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1600//1.5, 400//1.5), (1600//1.5, 1400//1.5)],
+        img_scale=[(1333, 400), (1333, 800)],
         # img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),
@@ -215,7 +217,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1333//1.5, 800//1.5),
+        img_scale=(1333, 800),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -342,6 +344,6 @@ mp_start_method = 'fork'
 #     dynamic_intervals=dynamic_intervals,
 #     metric=['PQ', 'bbox', 'segm'])
 
-load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-t-p4-w7-224_lsj_8x2_50e_coco-panoptic_20220326_224553-fc567107.pth'
+load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 resume_from = None
 work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v4'
