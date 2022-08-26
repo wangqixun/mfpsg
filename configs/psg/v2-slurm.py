@@ -131,7 +131,7 @@ model = dict(
         cls_qk_size=128,
         loss_weight=50,
         num_entity_max=50,
-        use_background_feature=False,
+        use_background_feature=True,
     ),
     panoptic_fusion_head=dict(
         type='MaskFormerFusionHead',
