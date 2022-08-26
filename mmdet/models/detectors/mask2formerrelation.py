@@ -137,14 +137,17 @@ class MaskFormerRelation(SingleStageDetector):
             num_imgs = len(img_metas)
             for idx in range(num_imgs):                
                 meta_info = img_metas[idx]
-                if len(meta_info['masks']) > self.num_entity_max:
-                    continue
+
+                masks = meta_info['masks']
+                if len(masks) > self.num_entity_max:
+                    masks = masks[:self.num_entity_max]
 
                 # feature
                 feature = mask_features[idx]
 
                 # thing mask
                 gt_mask = gt_masks[idx].to_ndarray()
+                gt_mask = gt_mask[:self.num_entity_max]
                 gt_mask = torch.from_numpy(gt_mask).to(device).to(dtype)
                 gt_label = gt_labels[idx]
                 if gt_mask.shape[0] != 0:
@@ -173,7 +176,6 @@ class MaskFormerRelation(SingleStageDetector):
                 mask_staff = []
                 label_staff = []
                 gt_semantic_seg_idx = gt_semantic_seg[idx]
-                masks = meta_info['masks']
                 for idx_stuff in range(len(gt_masks[idx]), len(masks), 1):
                     category_staff = masks[idx_stuff]['category']
                     mask = gt_semantic_seg_idx == category_staff
@@ -212,7 +214,9 @@ class MaskFormerRelation(SingleStageDetector):
                 if embedding is not None:
                     relationship_input_embedding.append(embedding)
                     target_relationship = torch.zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]]).to(device)
-                    for ii, jj, cls_relationship in img_metas[idx]['gt_relationship'][0]:
+                    for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
+                        if not (ii < embedding.shape[1] and jj < embedding.shape[1]):
+                            continue
                         target_relationship[0][cls_relationship][ii][jj] = 1
                     relationship_target.append(target_relationship)
                 else:
