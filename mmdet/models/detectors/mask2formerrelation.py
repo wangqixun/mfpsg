@@ -135,11 +135,10 @@ class MaskFormerRelation(SingleStageDetector):
             relationship_target = []
 
             num_imgs = len(img_metas)
-            for idx in range(num_imgs):
+            for idx in range(num_imgs):                
+                meta_info = img_metas[idx]
                 if len(meta_info['masks']) > self.self.num_entity_max:
                     continue
-                
-                meta_info = img_metas[idx]
 
                 # feature
                 feature = mask_features[idx]
