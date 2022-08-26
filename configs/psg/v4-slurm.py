@@ -6,6 +6,7 @@ num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
+
 model = dict(
     type='Mask2FormerRelation',
     backbone=dict(
