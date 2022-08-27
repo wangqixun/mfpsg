@@ -169,7 +169,7 @@ if __name__ == '__main__':
     get_val_p(
         mode='val',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v2-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v2/epoch_15.pth',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v2/epoch_30.pth',
     )
 
     # best v1 ep30 32+
