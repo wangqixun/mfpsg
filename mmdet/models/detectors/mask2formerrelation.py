@@ -213,7 +213,8 @@ class MaskFormerRelation(SingleStageDetector):
                 
                 if embedding is not None:
                     relationship_input_embedding.append(embedding)
-                    target_relationship = torch.zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]]).to(device)
+                    target_relationship = mask_features.new_zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]])
+                    # target_relationship = torch.zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]]).to(device)
                     for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
                         if not (ii < embedding.shape[1] and jj < embedding.shape[1]):
                             continue
@@ -225,7 +226,8 @@ class MaskFormerRelation(SingleStageDetector):
             if len(relationship_input_embedding) != 0:
 
                 max_length = max([e.shape[1] for e in relationship_input_embedding])
-                mask_attention = torch.zeros([num_imgs, max_length]).to(device)
+                mask_attention = mask_features.new_zeros([num_imgs, max_length])
+                # mask_attention = torch.zeros([num_imgs, max_length]).to(device)
                 for idx in range(num_imgs):
                     mask_attention[idx, :relationship_input_embedding[idx].shape[1]] = 1.
                 relationship_input_embedding = [
