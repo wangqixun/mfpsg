@@ -134,7 +134,7 @@ def multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
     return results
 
 
-@AvoidCUDAOOM.retry_if_cuda_oom
+# @AvoidCUDAOOM.retry_if_cuda_oom
 def collect_results_cpu(result_part, size, tmpdir=None):
     rank, world_size = get_dist_info()
     # create a tmp dir if it is not specified
@@ -178,7 +178,7 @@ def collect_results_cpu(result_part, size, tmpdir=None):
         return ordered_results
 
 
-@AvoidCUDAOOM.retry_if_cuda_oom
+# @AvoidCUDAOOM.retry_if_cuda_oom
 def collect_results_gpu(result_part, size):
     rank, world_size = get_dist_info()
     # dump result part to tensor with pickle
