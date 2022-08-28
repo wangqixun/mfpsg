@@ -180,7 +180,7 @@ class MaskFormerRelation(SingleStageDetector):
 
 
 
-    @AvoidCUDAOOM.retry_if_cuda_oom
+    # @AvoidCUDAOOM.retry_if_cuda_oom
     def forward_train(self,
                       img,
                       img_metas,
@@ -379,7 +379,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         return losses
 
-    @AvoidCUDAOOM.retry_if_cuda_oom
+    # @AvoidCUDAOOM.retry_if_cuda_oom
     def simple_test(self, imgs, img_metas, **kwargs):
         """Test without augmentation.
 
