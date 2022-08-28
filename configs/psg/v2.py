@@ -23,7 +23,9 @@ model = dict(
         frozen_stages=-1,
         use_abs_pos_embed=True,
     ),
-    relationship_head=dict(use_background_feature=True,),
+    relationship_head=dict(
+        num_entity_max=30,
+        use_background_feature=True,),
     panoptic_head=dict(
         in_channels=[96, 192, 384, 768]),
     init_cfg=None)

@@ -14,6 +14,8 @@ import torch
 import torch.nn.functional as F
 from IPython import embed
 from mmdet.utils import AvoidCUDAOOM
+import random
+
 
 @DETECTORS.register_module()
 class MaskFormerRelation(SingleStageDetector):
@@ -85,6 +87,99 @@ class MaskFormerRelation(SingleStageDetector):
         outs = self.panoptic_head(x, img_metas)
         return outs
 
+    def _id_is_thing(self, old_idx, gt_thing_label):
+        if old_idx < len(gt_thing_label):
+            return True
+        else:
+            return False
+
+    def _thing_embedding(self, idx, feature, gt_thing_mask, gt_thing_label, meta_info):
+        device = feature.device
+        dtype = feature.dtype
+
+        gt_mask = gt_thing_mask.to_ndarray()
+        gt_mask = gt_mask[idx: idx + 1]
+        gt_mask = torch.from_numpy(gt_mask).to(device).to(dtype)
+
+        h_img, w_img = meta_info['img_shape'][:2]
+        gt_mask = F.interpolate(gt_mask[:, None], size=(h_img, w_img))[:, 0]
+        h_pad, w_pad = meta_info['pad_shape'][:2]
+        gt_mask = F.pad(gt_mask[:, None], (0, w_pad-w_img, 0, h_pad-h_img))[:, 0]
+        h_feature, w_feature = feature.shape[-2:]
+        gt_mask = F.interpolate(gt_mask[:, None], size=(h_feature, w_feature))[:, 0]
+
+        feature_thing = feature[None] * gt_mask[:, None]
+        embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+        cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))
+
+        embedding_thing = embedding_thing + cls_feature_thing
+        if self.use_background_feature:
+            background_mask = 1 - gt_mask
+            background_feature = feature[None] * background_mask[:, None]
+            background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
+            embedding_thing = embedding_thing + background_feature
+
+        return embedding_thing
+
+
+    def _staff_embedding(self, idx, feature, masks, gt_semantic_seg):
+        device = feature.device
+        dtype = feature.dtype
+
+        category_staff = masks[idx]['category']
+        mask_staff = gt_semantic_seg == category_staff
+        mask_staff = mask_staff.to(dtype)
+        mask_staff = F.interpolate(mask_staff[None], size=(feature.shape[1], feature.shape[2]))[0]
+        label_staff = torch.tensor(category_staff).to(device).to(torch.long)
+
+        feature_staff = feature[None] * mask_staff[:, None]
+        cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))
+        embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
+        embedding_staff = embedding_staff + cls_feature_staff
+
+        if self.use_background_feature:
+            background_mask = 1 - mask_staff
+            background_feature = feature[None] * background_mask[:, None]
+            background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+            embedding_staff = embedding_staff + background_feature
+        return embedding_staff
+
+
+
+    def _get_entity_embedding_and_target(self, feature, meta_info, gt_thing_mask, gt_thing_label, gt_semantic_seg):
+        # feature: [256, h, w]
+        # meta_info: dict
+        # gt_thing_mask: bitmap, n
+        # gt_thing_label: 
+
+        masks = meta_info['masks']
+        num_keep = min(self.num_entity_max, len(masks))
+        keep_idx_list = random.sample(list(range(len(masks))), num_keep)
+        old2new_dict = {old: new for new, old in enumerate(keep_idx_list)}
+
+        embedding_list = []
+        for idx, old in enumerate(keep_idx_list):
+            if self._id_is_thing(old, gt_thing_label):
+                embedding = self._thing_embedding(old, feature, gt_thing_mask, gt_thing_label, meta_info)
+            else:
+                embedding = self._staff_embedding(old, feature, masks, gt_semantic_seg)
+            embedding_list.append(embedding[None])
+        embedding = torch.cat(embedding_list, dim=1)
+
+        target_relationship = feature.new_zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]])
+        for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
+            if not (ii in old2new_dict and jj in old2new_dict):
+                continue
+            new_ii, new_jj = old2new_dict[ii], old2new_dict[jj]
+            target_relationship[0][cls_relationship][new_ii][new_jj] = 1
+
+        # embedding [1, n, 256]
+        # target_relationship [1, 56, n, n]
+        return embedding, target_relationship
+
+
+
+
     @AvoidCUDAOOM.retry_if_cuda_oom
     def forward_train(self,
                       img,
@@ -136,119 +231,151 @@ class MaskFormerRelation(SingleStageDetector):
             relationship_target = []
 
             num_imgs = len(img_metas)
-            for idx in range(num_imgs):                
-                meta_info = img_metas[idx]
 
-                masks = meta_info['masks']
-                masks = masks[:self.num_entity_max]
+            for idx in range(num_imgs):
+                embedding, target_relationship = self._get_entity_embedding_and_target(
+                    mask_features[idx],
+                    img_metas[idx],
+                    gt_masks[idx],
+                    gt_labels[idx],
+                    gt_semantic_seg[idx],
+                )
+                relationship_input_embedding.append(embedding)
+                relationship_target.append(target_relationship)
 
-                # feature
-                feature = mask_features[idx]
-
-                # thing mask
-                gt_mask = gt_masks[idx].to_ndarray()
-                gt_mask = gt_mask[:self.num_entity_max]
-                gt_mask = torch.from_numpy(gt_mask).to(device).to(dtype)
-                gt_label = gt_labels[idx][:len(gt_mask)]
-                if gt_mask.shape[0] != 0:
-                    h_img, w_img = meta_info['img_shape'][:2]
-                    gt_mask = F.interpolate(gt_mask[:, None], size=(h_img, w_img))[:, 0]
-                    h_pad, w_pad = meta_info['pad_shape'][:2]
-                    gt_mask = F.pad(gt_mask[:, None], (0, w_pad-w_img, 0, h_pad-h_img))[:, 0]
-                    h_feature, w_feature = mask_features.shape[-2:]
-                    gt_mask = F.interpolate(gt_mask[:, None], size=(h_feature, w_feature))[:, 0]
-
-                    # thing feature
-                    feature_thing = feature[None] * gt_mask[:, None]
-                    embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-                    cls_feature_thing = self.rela_cls_embed(gt_label.reshape([-1, ]))
-                    embedding_thing = embedding_thing + cls_feature_thing
-                    if self.use_background_feature:
-                        background_mask = 1 - gt_mask
-                        background_feature = feature[None] * background_mask[:, None]
-                        background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
-                        embedding_thing = embedding_thing + background_feature
-                else:
-                    embedding_thing = None
+            max_length = max([e.shape[1] for e in relationship_input_embedding])
+            mask_attention = mask_features.new_zeros([num_imgs, max_length])
+            for idx in range(num_imgs):
+                mask_attention[idx, :relationship_input_embedding[idx].shape[1]] = 1.
+            relationship_input_embedding = [
+                F.pad(e, [0, 0, 0, max_length-e.shape[1]])
+                for e in relationship_input_embedding
+            ]
+            relationship_target = [
+                F.pad(t, [0, max_length-t.shape[3], 0, max_length-t.shape[2]])
+                for t in relationship_target
+            ]
+            relationship_input_embedding = torch.cat(relationship_input_embedding, dim=0)
+            relationship_target = torch.cat(relationship_target, dim=0)
+            relationship_output = self.relationship_head(relationship_input_embedding, mask_attention)
+            loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
+            losses.update(loss_relationship)
 
 
-                # staff mask
-                mask_staff = []
-                label_staff = []
-                gt_semantic_seg_idx = gt_semantic_seg[idx]
-                for idx_stuff in range(len(gt_masks[idx]), len(masks), 1):
-                    category_staff = masks[idx_stuff]['category']
-                    mask = gt_semantic_seg_idx == category_staff
-                    mask_staff.append(mask)
-                    label_staff.append(category_staff)
-                if len(mask_staff) != 0:
-                    mask_staff = torch.cat(mask_staff, dim=0)
-                    mask_staff = mask_staff.to(dtype)
-                    mask_staff = F.interpolate(mask_staff[None], size=(feature.shape[1], feature.shape[2]))[0]
-                    label_staff = torch.tensor(label_staff).to(device).to(torch.long)
-                    # staff feature
-                    feature_staff = feature[None] * mask_staff[:, None]
-                    cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))
-                    embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
-                    embedding_staff = embedding_staff + cls_feature_staff
-                    if self.use_background_feature:
-                        background_mask = 1 - mask_staff
-                        background_feature = feature[None] * background_mask[:, None]
-                        background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-                        embedding_staff = embedding_staff + background_feature
-                else:
-                    embedding_staff = None
 
-                # final embedding
-                embedding_list = []
-                if embedding_thing is not None:
-                    embedding_list.append(embedding_thing)
-                if embedding_staff is not None:
-                    embedding_list.append(embedding_staff)
-                if len(embedding_list) != 0:
-                    embedding = torch.cat(embedding_list, dim=0)
-                    embedding = embedding[None]
-                else:
-                    embedding = None
+            # for idx in range(num_imgs):
+            #     meta_info = img_metas[idx]
+
+            #     masks = meta_info['masks']
+            #     masks = masks[:self.num_entity_max]
+
+            #     # feature
+            #     feature = mask_features[idx]
+
+            #     # thing mask
+            #     gt_mask = gt_masks[idx].to_ndarray()
+            #     gt_mask = gt_mask[:self.num_entity_max]
+            #     gt_mask = torch.from_numpy(gt_mask).to(device).to(dtype)
+            #     gt_label = gt_labels[idx][:len(gt_mask)]
+            #     if gt_mask.shape[0] != 0:
+            #         h_img, w_img = meta_info['img_shape'][:2]
+            #         gt_mask = F.interpolate(gt_mask[:, None], size=(h_img, w_img))[:, 0]
+            #         h_pad, w_pad = meta_info['pad_shape'][:2]
+            #         gt_mask = F.pad(gt_mask[:, None], (0, w_pad-w_img, 0, h_pad-h_img))[:, 0]
+            #         h_feature, w_feature = mask_features.shape[-2:]
+            #         gt_mask = F.interpolate(gt_mask[:, None], size=(h_feature, w_feature))[:, 0]
+
+            #         # thing feature
+            #         feature_thing = feature[None] * gt_mask[:, None]
+            #         embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+            #         cls_feature_thing = self.rela_cls_embed(gt_label.reshape([-1, ]))
+            #         embedding_thing = embedding_thing + cls_feature_thing
+            #         if self.use_background_feature:
+            #             background_mask = 1 - gt_mask
+            #             background_feature = feature[None] * background_mask[:, None]
+            #             background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
+            #             embedding_thing = embedding_thing + background_feature
+            #     else:
+            #         embedding_thing = None
+
+
+            #     # staff mask
+            #     mask_staff = []
+            #     label_staff = []
+            #     gt_semantic_seg_idx = gt_semantic_seg[idx]
+            #     for idx_stuff in range(len(gt_masks[idx]), len(masks), 1):
+            #         category_staff = masks[idx_stuff]['category']
+            #         mask = gt_semantic_seg_idx == category_staff
+            #         mask_staff.append(mask)
+            #         label_staff.append(category_staff)
+            #     if len(mask_staff) != 0:
+            #         mask_staff = torch.cat(mask_staff, dim=0)
+            #         mask_staff = mask_staff.to(dtype)
+            #         mask_staff = F.interpolate(mask_staff[None], size=(feature.shape[1], feature.shape[2]))[0]
+            #         label_staff = torch.tensor(label_staff).to(device).to(torch.long)
+            #         # staff feature
+            #         feature_staff = feature[None] * mask_staff[:, None]
+            #         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))
+            #         embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
+            #         embedding_staff = embedding_staff + cls_feature_staff
+            #         if self.use_background_feature:
+            #             background_mask = 1 - mask_staff
+            #             background_feature = feature[None] * background_mask[:, None]
+            #             background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+            #             embedding_staff = embedding_staff + background_feature
+            #     else:
+            #         embedding_staff = None
+
+            #     # final embedding
+            #     embedding_list = []
+            #     if embedding_thing is not None:
+            #         embedding_list.append(embedding_thing)
+            #     if embedding_staff is not None:
+            #         embedding_list.append(embedding_staff)
+            #     if len(embedding_list) != 0:
+            #         embedding = torch.cat(embedding_list, dim=0)
+            #         embedding = embedding[None]
+            #     else:
+            #         embedding = None
                 
-                if embedding is not None:
-                    relationship_input_embedding.append(embedding)
-                    target_relationship = mask_features.new_zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]])
-                    # target_relationship = torch.zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]]).to(device)
-                    for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
-                        if not (ii < embedding.shape[1] and jj < embedding.shape[1]):
-                            continue
-                        target_relationship[0][cls_relationship][ii][jj] = 1
-                    relationship_target.append(target_relationship)
-                else:
-                    continue
+            #     if embedding is not None:
+            #         relationship_input_embedding.append(embedding)
+            #         target_relationship = mask_features.new_zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]])
+            #         # target_relationship = torch.zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]]).to(device)
+            #         for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
+            #             if not (ii < embedding.shape[1] and jj < embedding.shape[1]):
+            #                 continue
+            #             target_relationship[0][cls_relationship][ii][jj] = 1
+            #         relationship_target.append(target_relationship)
+            #     else:
+            #         continue
 
-            if len(relationship_input_embedding) != 0:
+            # if len(relationship_input_embedding) != 0:
 
-                max_length = max([e.shape[1] for e in relationship_input_embedding])
-                mask_attention = mask_features.new_zeros([num_imgs, max_length])
-                # mask_attention = torch.zeros([num_imgs, max_length]).to(device)
-                for idx in range(num_imgs):
-                    mask_attention[idx, :relationship_input_embedding[idx].shape[1]] = 1.
-                relationship_input_embedding = [
-                    F.pad(e, [0, 0, 0, max_length-e.shape[1]])
-                    for e in relationship_input_embedding
-                ]
-                relationship_target = [
-                    F.pad(t, [0, max_length-t.shape[3], 0, max_length-t.shape[2]])
-                    for t in relationship_target
-                ]
+            #     max_length = max([e.shape[1] for e in relationship_input_embedding])
+            #     mask_attention = mask_features.new_zeros([num_imgs, max_length])
+            #     # mask_attention = torch.zeros([num_imgs, max_length]).to(device)
+            #     for idx in range(num_imgs):
+            #         mask_attention[idx, :relationship_input_embedding[idx].shape[1]] = 1.
+            #     relationship_input_embedding = [
+            #         F.pad(e, [0, 0, 0, max_length-e.shape[1]])
+            #         for e in relationship_input_embedding
+            #     ]
+            #     relationship_target = [
+            #         F.pad(t, [0, max_length-t.shape[3], 0, max_length-t.shape[2]])
+            #         for t in relationship_target
+            #     ]
 
-                relationship_input_embedding = torch.cat(relationship_input_embedding, dim=0)
-                relationship_target = torch.cat(relationship_target, dim=0)
+            #     relationship_input_embedding = torch.cat(relationship_input_embedding, dim=0)
+            #     relationship_target = torch.cat(relationship_target, dim=0)
 
-                relationship_input_embedding = relationship_input_embedding[:, :self.num_entity_max, :]
-                relationship_target = relationship_target[:, :, :self.num_entity_max, :self.num_entity_max]
-                mask_attention = mask_attention[:, :self.num_entity_max]
+            #     relationship_input_embedding = relationship_input_embedding[:, :self.num_entity_max, :]
+            #     relationship_target = relationship_target[:, :, :self.num_entity_max, :self.num_entity_max]
+            #     mask_attention = mask_attention[:, :self.num_entity_max]
 
-                relationship_output = self.relationship_head(relationship_input_embedding, mask_attention)
-                loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
-                losses.update(loss_relationship)
+            #     relationship_output = self.relationship_head(relationship_input_embedding, mask_attention)
+            #     loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
+            #     losses.update(loss_relationship)
 
         return losses
 
