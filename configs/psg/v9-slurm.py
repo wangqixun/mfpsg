@@ -193,7 +193,7 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1600, 400), (1600, 1400)],
+        img_scale=[(1500, 400), (1500, 1350)],
         # img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),

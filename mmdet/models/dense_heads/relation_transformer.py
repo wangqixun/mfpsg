@@ -34,6 +34,8 @@ class BertTransformer(BaseModule):
         positional_encoding=None,
         use_background_feature=False,
         entity_length=1,
+        entity_part_encoder='/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext',
+        entity_part_encoder_layers=6,
     ):
         super().__init__()
         self.num_cls = num_cls
@@ -61,6 +63,8 @@ class BertTransformer(BaseModule):
             self.postional_encoding = build_positional_encoding(positional_encoding)
         self.use_background_feature = use_background_feature
         self.entity_length = entity_length
+        self.entity_part_encoder = entity_part_encoder
+        self.entity_part_encoder_layers = entity_part_encoder_layers
 
 
 
