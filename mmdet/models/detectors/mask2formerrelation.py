@@ -155,7 +155,7 @@ class MaskFormerRelation(SingleStageDetector):
         # embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
         embedding_staff = self._mask_pooling(feature, mask_staff, output_size=output_size)  # [1, 256]
         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))  # [1, 256]
-        
+
         embedding_staff = embedding_staff + cls_feature_staff
 
         if self.use_background_feature:
@@ -187,6 +187,7 @@ class MaskFormerRelation(SingleStageDetector):
                 embedding = self._staff_embedding(old, feature, masks, gt_semantic_seg, output_size=self.entity_length)
             embedding_list.append(embedding[None])
         embedding = torch.cat(embedding_list, dim=1)
+        print(embedding)
 
         if self.entity_length > 1:
             pass
