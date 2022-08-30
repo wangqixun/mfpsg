@@ -36,8 +36,8 @@ model = dict(
         
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=2,
+    samples_per_gpu=2,
+    workers_per_gpu=4,
 )
 
 # set all layers in backbone to lr_mult=0.1
