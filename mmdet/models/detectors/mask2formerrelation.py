@@ -450,6 +450,7 @@ class MaskFormerRelation(SingleStageDetector):
             #     loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
             #     losses.update(loss_relationship)
 
+        torch.cuda.empty_cache()
         return losses
 
     # @AvoidCUDAOOM.retry_if_cuda_oom
