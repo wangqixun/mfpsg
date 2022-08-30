@@ -16,6 +16,8 @@ from IPython import embed
 from mmdet.utils import AvoidCUDAOOM
 import random
 
+from transformers import AutoTokenizer, AutoModel, AutoConfig
+
 
 @DETECTORS.register_module()
 class MaskFormerRelation(SingleStageDetector):
@@ -63,7 +65,20 @@ class MaskFormerRelation(SingleStageDetector):
             self.num_entity_max = self.relationship_head.num_entity_max
             self.use_background_feature = self.relationship_head.use_background_feature
             self.entity_length = self.relationship_head.entity_length
-            
+            self.entity_part_encoder = self.relationship_head.entity_part_encoder
+            self.entity_part_encoder_layers = self.relationship_head.entity_part_encoder_layers
+            if self.entity_length > 1:
+                self.entity_model = AutoModel.from_pretrained(self.entity_part_encoder, cache_dir=self.relationship_head.cache_dir)
+                self.entity_model.encoder.layer = self.entity_model.encoder.layer[:self.entity_part_encoder_layers]
+                self.entity_model.embeddings.word_embeddings = None
+                self.entity_encode_fc_input = nn.Sequential(
+                    nn.Linear(self.relationship_head.input_feature_size, self.relationship_head.feature_size),
+                    nn.LayerNorm(self.relationship_head.feature_size),
+                )
+                self.entity_encode_fc_output = nn.Sequential(
+                    nn.Linear(self.relationship_head.feature_size, self.relationship_head.feature_size),
+                    nn.LayerNorm(self.relationship_head.feature_size),
+                )
 
 
     @property
@@ -106,14 +121,19 @@ class MaskFormerRelation(SingleStageDetector):
         mask_bool = (mask >= 0.5)[0]
         feats = feature[:, mask_bool]
         if feats.shape[1] < output_size:
-            feats = torch.cat([feats] * (output_size // feats.shape[1] + 1), dim=1)
+            feats = torch.cat([feats] * int(np.ceil(output_size/feats.shape[1])), dim=1)
             feats = feats[:, :output_size]
-        feats_list = torch.chunk(feats, output_size, dim=1)
+        
+        split_list = [feats.shape[1] // output_size] * output_size
+        for idx in range(feats.shape[1] - sum(split_list)):
+            split_list[idx] += 1
+        feats_list = torch.split(feats, split_list, dim=1)
         feats_mean_list = [feat.mean(dim=1)[None] for feat in feats_list]
         feats_tensor = torch.cat(feats_mean_list, dim=0)
+        # [output_size, 256]
         return feats_tensor
 
-    def _thing_embedding(self, idx, feature, gt_thing_mask, gt_thing_label, meta_info, output_size=1):
+    def _thing_embedding(self, idx, feature, gt_thing_mask, gt_thing_label, meta_info):
         device = feature.device
         dtype = feature.dtype
 
@@ -131,7 +151,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         # feature_thing = feature[None] * gt_mask[:, None]
         # embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-        embedding_thing = self._mask_pooling(feature, gt_mask, output_size=output_size)  # [1, 256]
+        embedding_thing = self._mask_pooling(feature, gt_mask, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))  # [1, 256]
 
         embedding_thing = embedding_thing + cls_feature_thing
@@ -140,13 +160,14 @@ class MaskFormerRelation(SingleStageDetector):
             # background_mask = 1 - gt_mask
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
-            background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=output_size)  # [1, 256]
+            background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
             embedding_thing = embedding_thing + background_feature
 
+        # [output_size, 256]
         return embedding_thing
 
 
-    def _staff_embedding(self, idx, feature, masks, gt_semantic_seg, output_size=1):
+    def _staff_embedding(self, idx, feature, masks, gt_semantic_seg):
         device = feature.device
         dtype = feature.dtype
 
@@ -158,7 +179,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         # feature_staff = feature[None] * mask_staff[:, None]
         # embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
-        embedding_staff = self._mask_pooling(feature, mask_staff, output_size=output_size)  # [1, 256]
+        embedding_staff = self._mask_pooling(feature, mask_staff, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))  # [1, 256]
 
         embedding_staff = embedding_staff + cls_feature_staff
@@ -167,11 +188,32 @@ class MaskFormerRelation(SingleStageDetector):
             # background_mask = 1 - mask_staff
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-            background_feature = self._mask_pooling(feature, 1 - mask_staff, output_size=output_size)  # [1, 256]
+            background_feature = self._mask_pooling(feature, 1 - mask_staff, output_size=self.entity_length)  # [output_size, 256]
             embedding_staff = embedding_staff + background_feature
+        
+        # [output_size, 256]
         return embedding_staff
 
+    def _entity_encode(self, inputs_embeds):
+        '''
+        inputs_embeds [1, n * self.entity_length, 256]
+        '''
+        num_entity = inputs_embeds.shape[1] // self.entity_length
 
+        position_ids = torch.ones([1, inputs_embeds.shape[1]]).to(inputs_embeds.device).to(torch.long)
+        encode_inputs_embeds = self.entity_encode_fc_input(inputs_embeds)
+        encode_res = self.entity_model(inputs_embeds=encode_inputs_embeds, attention_mask=None, position_ids=position_ids)
+        encode_embedding = encode_res['last_hidden_state']
+        encode_embedding = self.entity_encode_fc_output(encode_embedding)
+
+        split_list = [self.entity_length] * num_entity
+        encode_embedding_list = torch.split(encode_embedding, split_list, dim=1)
+
+        encode_embedding = [e.mean(dim=1) for e in encode_embedding_list]
+        encode_embedding = torch.cat(encode_embedding, dim=0)
+        encode_embedding = encode_embedding[None]
+        # [1, n, 256]
+        return encode_embedding
 
     def _get_entity_embedding_and_target(self, feature, meta_info, gt_thing_mask, gt_thing_label, gt_semantic_seg):
         # feature: [256, h, w]
@@ -187,14 +229,15 @@ class MaskFormerRelation(SingleStageDetector):
         embedding_list = []
         for idx, old in enumerate(keep_idx_list):
             if self._id_is_thing(old, gt_thing_label):
-                embedding = self._thing_embedding(old, feature, gt_thing_mask, gt_thing_label, meta_info, output_size=self.entity_length)
+                embedding = self._thing_embedding(old, feature, gt_thing_mask, gt_thing_label, meta_info)
             else:
-                embedding = self._staff_embedding(old, feature, masks, gt_semantic_seg, output_size=self.entity_length)
+                embedding = self._staff_embedding(old, feature, masks, gt_semantic_seg)
             embedding_list.append(embedding[None])
+        # [1, n * self.entity_length, 256]
         embedding = torch.cat(embedding_list, dim=1)
 
         if self.entity_length > 1:
-            pass
+            embedding = self._entity_encode(embedding)
 
         target_relationship = feature.new_zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]])
         for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:

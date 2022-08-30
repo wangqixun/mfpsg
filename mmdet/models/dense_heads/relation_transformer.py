@@ -48,6 +48,7 @@ class BertTransformer(BaseModule):
             nn.Linear(feature_size, feature_size),
             nn.LayerNorm(feature_size),
         )
+        self.cache_dir = cache_dir
         self.model = AutoModel.from_pretrained(pretrained_transformers, cache_dir=cache_dir)
         self.cls_q = nn.Linear(feature_size, cls_qk_size * num_cls)
         self.cls_k = nn.Linear(feature_size, cls_qk_size * num_cls)
@@ -70,7 +71,10 @@ class BertTransformer(BaseModule):
 
     def forward(self,inputs_embeds, attention_mask=None):
         position_ids = torch.ones([1, inputs_embeds.shape[1]]).to(inputs_embeds.device).to(torch.long)
-        encode_inputs_embeds = self.fc_input(inputs_embeds)
+        if inputs_embeds.shape[-1] != self.feature_size:
+            encode_inputs_embeds = self.fc_input(inputs_embeds)
+        else:
+            encode_inputs_embeds = inputs_embeds
         encode_res = self.model(inputs_embeds=encode_inputs_embeds, attention_mask=attention_mask, position_ids=position_ids)
         encode_embedding = encode_res['last_hidden_state']
         encode_embedding = self.fc_output(encode_embedding)
