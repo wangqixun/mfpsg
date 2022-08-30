@@ -168,11 +168,15 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v2-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v2/epoch_30.pth',
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v4-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v4/epoch_32.pth',
     )
 
-    # best v1 ep30 32+
+    # land
+    # best v1 ep30 31.3
+    # v4 ep30 32.36
+    # v5 ep30 31.94
+
 
 
 
