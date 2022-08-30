@@ -234,8 +234,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=2,
-    workers_per_gpu=4,
+    samples_per_gpu=1,
+    workers_per_gpu=2,
     train=dict(
         type=dataset_type,
         ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_tra.json',
@@ -350,4 +350,4 @@ mp_start_method = 'fork'
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v3'
+work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v11'
