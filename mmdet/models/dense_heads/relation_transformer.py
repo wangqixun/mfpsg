@@ -33,6 +33,7 @@ class BertTransformer(BaseModule):
         num_entity_max=30,
         positional_encoding=None,
         use_background_feature=False,
+        entity_length=1,
     ):
         super().__init__()
         self.num_cls = num_cls
@@ -49,6 +50,7 @@ class BertTransformer(BaseModule):
         self.cls_q = nn.Linear(feature_size, cls_qk_size * num_cls)
         self.cls_k = nn.Linear(feature_size, cls_qk_size * num_cls)
         self.model.encoder.layer = self.model.encoder.layer[:layers_transformers]
+        self.model.embeddings.word_embeddings = None
         self.loss_weight = loss_weight
         self.feature_size = feature_size
         self.input_feature_size = input_feature_size
@@ -58,6 +60,7 @@ class BertTransformer(BaseModule):
             self.positional_encoding_cfg = positional_encoding
             self.postional_encoding = build_positional_encoding(positional_encoding)
         self.use_background_feature = use_background_feature
+        self.entity_length = entity_length
 
 
 
