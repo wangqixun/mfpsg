@@ -101,8 +101,13 @@ class MaskFormerRelation(SingleStageDetector):
         mask [1, h, w]
         output_size == 1: mean
         '''
+        if mask.sum() <= 0:
+            return feature.new_zeros([output_size, feature.shape[0]])
         mask_bool = (mask >= 0.5)[0]
         feats = feature[:, mask_bool]
+        if feats.shape[1] < output_size:
+            feats = torch.cat([feats] * (output_size // feats.shape[1] + 1), dim=1)
+            feats = feats[:, :output_size]
         feats_list = torch.chunk(feats, output_size, dim=1)
         feats_mean_list = [feat.mean(dim=1)[None] for feat in feats_list]
         feats_tensor = torch.cat(feats_mean_list, dim=0)
@@ -187,7 +192,6 @@ class MaskFormerRelation(SingleStageDetector):
                 embedding = self._staff_embedding(old, feature, masks, gt_semantic_seg, output_size=self.entity_length)
             embedding_list.append(embedding[None])
         embedding = torch.cat(embedding_list, dim=1)
-        print(embedding)
 
         if self.entity_length > 1:
             pass
