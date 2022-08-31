@@ -29,6 +29,8 @@ def get_model(cfg, ckp):
 
     cfg['model']['relationship_head']['pretrained_transformers'] = '/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext'
     cfg['model']['relationship_head']['cache_dir'] = './'    
+    if 'entity_length' in cfg['model']['relationship_head'] and cfg['model']['relationship_head']['entity_length'] > 1:
+        cfg['model']['relationship_head']['entity_part_encoder'] = '/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext'
 
     model = init_detector(cfg, ckp)
     return model
@@ -168,8 +170,8 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v4-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v4/epoch_32.pth',
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v11-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_12.pth',
     )
 
     # land

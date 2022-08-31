@@ -557,17 +557,18 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
         # mask_tensor [n, 1, h, w]
         if self.entity_length > 1:
             entity_embedding_list = []
-            for idx in range(mask_list):
+            for idx in range(len(mask_list)):
+                # embedding [self.entity_length, 256]
                 embedding = self._mask_pooling(feature_map[0], mask_tensor[idx], self.entity_length)
-                embedding = embedding + cls_entity_embedding[idx:idx+1]
+                embedding = embedding + cls_entity_embedding[0, idx:idx+1]
                 if self.use_background_feature:
                     background_embedding = self._mask_pooling(feature_map[0], 1 - mask_tensor[idx], self.entity_length)
                     embedding = embedding + background_embedding
-                
                 entity_embedding_list.append(embedding[None])
 
             # embedding [1, n*self.entity_length, 256]
             embedding = torch.cat(entity_embedding_list, dim=1)
+            # entity_embedding [1, n, 256]
             entity_embedding = self._entity_encode(embedding)
 
         else:
@@ -579,10 +580,11 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                 background_mask = 1 - mask_tensor
                 background_feature = (feature_map * background_mask).sum(dim=[2, 3]) / (background_mask.sum(dim=[2, 3]) + 1e-8)
                 background_feature = background_feature[None]
+                # entity_embedding [1, n, 256]
                 entity_embedding = entity_embedding + background_feature
 
-            # entity_embedding [1, n, 256]
-            return entity_embedding, entity_id_list, entity_score_list
+        # entity_embedding [1, n, 256]
+        return entity_embedding, entity_id_list, entity_score_list
 
 
     def simple_test(self, imgs, img_metas, **kwargs):
