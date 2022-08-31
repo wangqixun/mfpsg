@@ -171,10 +171,10 @@ if __name__ == '__main__':
     get_val_p(
         mode='val',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v11-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_12.pth',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_16.pth',
     )
 
-    # land
+    # landmark
     # best v1 ep30 31.3
     # v4 ep30 32.36
     # v5 ep30 31.94
