@@ -171,7 +171,7 @@ if __name__ == '__main__':
     get_val_p(
         mode='val',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v11-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_16.pth',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_30.pth',
     )
 
     # landmark
