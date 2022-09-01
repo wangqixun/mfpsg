@@ -132,7 +132,7 @@ model = dict(
         num_cls=num_relation,
         cls_qk_size=256,
         loss_weight=50,
-        num_entity_max=50,
+        num_entity_max=30,
         use_background_feature=False,
     ),
     panoptic_fusion_head=dict(
