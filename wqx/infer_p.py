@@ -153,7 +153,7 @@ def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
 
         single_result_dict = dict(
             # image_id=image_id,
-            relations=[[s, o, r+1] for s, o, r in relation],
+            relations=[[s, o, r + 1] for s, o, r in relation],
             segments_info=segments_info,
             pan_seg_file_name='%d.png' % cur_nb,
         )
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v11-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_30.pth',
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v13-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v13/epoch_1.pth',
         val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val'
     )
 
