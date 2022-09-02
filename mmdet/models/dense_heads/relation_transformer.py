@@ -36,7 +36,16 @@ class BertTransformer(BaseModule):
         entity_length=1,
         entity_part_encoder='/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext',
         entity_part_encoder_layers=6,
+        loss_mode='v1',
     ):
+        '''
+            loss_mode = 'v1'
+                [bs, head, N, N] -> [bs*head, N*N]
+            loss_mode = 'v2'
+                [bs, head, N, N] -> [bs, head*N*N]
+            loss_mode = 'v3'
+                [bs, head, N, N] -> [bs, N, head, N] -> [bs*N, head*N]
+        '''
         super().__init__()
         self.num_cls = num_cls
         self.cls_qk_size = cls_qk_size
@@ -66,7 +75,7 @@ class BertTransformer(BaseModule):
         self.entity_length = entity_length
         self.entity_part_encoder = entity_part_encoder
         self.entity_part_encoder_layers = entity_part_encoder_layers
-
+        self.loss_mode = loss_mode
 
 
     def forward(self,inputs_embeds, attention_mask=None):
@@ -169,7 +178,19 @@ class BertTransformer(BaseModule):
             mask[idx, :, :n, :n] = 1
         pred = pred * mask - 9999 * (1 - mask)
 
-        loss = self.multilabel_categorical_crossentropy(target.reshape([bs*nb_cls, -1]), pred.reshape([bs*nb_cls, -1]))
+        if self.loss_mode == 'v1':
+            input_tensor = pred.reshape([bs*nb_cls, -1])
+            target_tensor = target.reshape([bs*nb_cls, -1])
+            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+        elif self.loss_mode == 'v2':
+            input_tensor = pred.reshape([bs, -1])
+            target_tensor = target.reshape([bs, -1])
+            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+        elif self.loss_mode == 'v3':
+            input_tensor = pred.pertume([0, 2, 1, 3]).reshape([bs*N, -1])
+            target_tensor = target.pertume([0, 2, 1, 3]).reshape([bs*N, -1])
+            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+        
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
 

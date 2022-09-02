@@ -74,14 +74,14 @@ def look_zhanbi():
         else:
             rela_dict[r_cls] = 1
     
-    # for idx in range(56):
-    #     print(idx, psg_data['predicate_classes'][idx], rela_dict[idx], (rela_dict[idx]/len(res['res'])*100))
+    for idx in range(56):
+        print(idx, psg_data['predicate_classes'][idx], rela_dict[idx], (rela_dict[idx]/len(res['res'])*100))
 
     data = [(rela_dict[idx]/len(res['res']))*100 for idx in range(56)]
     plt.bar(list(range(len(data))), data)
     plt.savefig('/share/wangqixun/workspace/bs/psg/mfpsg/wqx/1.jpg')
 
-    print(data)
+    # print(data)
 
 
     return res

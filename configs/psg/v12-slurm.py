@@ -6,7 +6,6 @@ num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
-
 model = dict(
     type='Mask2FormerRelation',
     backbone=dict(
@@ -132,11 +131,9 @@ model = dict(
         num_cls=num_relation,
         cls_qk_size=128,
         loss_weight=50,
-        num_entity_max=30,
+        num_entity_max=50,
         use_background_feature=False,
-        entity_length=8,
-        entity_part_encoder='/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext',
-        entity_part_encoder_layers=6,
+        loss_mode='v2',
     ),
     panoptic_fusion_head=dict(
         type='MaskFormerFusionHead',
@@ -196,7 +193,7 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1600, 400), (1600, 1400)],
+        img_scale=[(1600//2, 400//2), (1600//2, 1400//2)],
         # img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),
@@ -221,7 +218,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1333, 800),
+        img_scale=(1333//2, 800//2),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -234,8 +231,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=2,
+    samples_per_gpu=2,
+    workers_per_gpu=4,
     train=dict(
         type=dataset_type,
         ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_tra.json',
@@ -349,5 +346,5 @@ mp_start_method = 'fork'
 #     metric=['PQ', 'bbox', 'segm'])
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v12/latest.pth'
+resume_from = None
 work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v12'

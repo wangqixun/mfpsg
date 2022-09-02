@@ -171,10 +171,10 @@ if __name__ == '__main__':
     # get_tra_val_test_list()
     # get_test_p()
     get_val_p(
-        mode='v11',
+        mode='val',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v11-slurm.py',
         ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_30.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_300'
+        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val'
     )
 
     # landmark
