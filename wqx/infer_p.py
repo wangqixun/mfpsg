@@ -69,13 +69,15 @@ def get_tra_val_test_list():
     return tra_id_list, val_id_list, test_id_list
 
 
-def get_val_p(mode, cfg, ckp):
+def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
     jpg_output_dir = f'/share/wangqixun/workspace/bs/psg/mfpsg/submit/{mode}/submission/panseg'
     json_output_dir = f'/share/wangqixun/workspace/bs/psg/mfpsg/submit/{mode}/submission'
 
     if mode=='val':
-        jpg_output_dir = '/share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission/panseg'
-        json_output_dir = '/share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission'
+        jpg_output_dir = os.path.join(val_mode_output_dir, 'submission/panseg')
+        json_output_dir = os.path.join(val_mode_output_dir, 'submission')
+        # jpg_output_dir = '/share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission/panseg'
+        # json_output_dir = '/share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission'
 
     os.makedirs(jpg_output_dir, exist_ok=True)
 
@@ -169,9 +171,10 @@ if __name__ == '__main__':
     # get_tra_val_test_list()
     # get_test_p()
     get_val_p(
-        mode='val',
+        mode='v11',
         cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v11-slurm.py',
         ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v11/epoch_30.pth',
+        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_300'
     )
 
     # landmark
