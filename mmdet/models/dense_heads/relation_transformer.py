@@ -187,8 +187,8 @@ class BertTransformer(BaseModule):
             target_tensor = target.reshape([bs, -1])
             loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
         elif self.loss_mode == 'v3':
-            input_tensor = pred.pertume([0, 2, 1, 3]).reshape([bs*N, -1])
-            target_tensor = target.pertume([0, 2, 1, 3]).reshape([bs*N, -1])
+            input_tensor = pred.permute([0, 2, 1, 3]).reshape([bs*N, -1])
+            target_tensor = target.permute([0, 2, 1, 3]).reshape([bs*N, -1])
             loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
         
         loss = loss.mean()
