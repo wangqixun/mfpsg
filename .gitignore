@@ -125,4 +125,5 @@ work_dirs/
 
 output/
 submit/
+wqx/*.json
 
