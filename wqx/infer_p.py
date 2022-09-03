@@ -172,9 +172,9 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v13-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v13/epoch_4.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val'
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v12-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v12/epoch_32.pth',
+        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v12'
     )
 
     # landmark
