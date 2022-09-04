@@ -647,7 +647,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
 
             # relationship weight
             # for ratio_th, weight in [
-            #     [[0, 0.01], 150],
+            #     [[0, 0.01], 800],
             #     # [[0.001, 0.01], 300],
             # ]:
             #     mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
