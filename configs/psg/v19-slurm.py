@@ -193,7 +193,7 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1600, 400), (1600, 1400)],
+        img_scale=[(1500, 400), (1500, 1400)],
         # img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),
@@ -346,6 +346,6 @@ mp_start_method = 'fork'
 #     metric=['PQ', 'bbox', 'segm'])
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-# resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v18/latest.pth'
-resume_from = None
+resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v19/latest.pth'
+# resume_from = None
 work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v19'
