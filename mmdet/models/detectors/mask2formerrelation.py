@@ -81,6 +81,59 @@ class MaskFormerRelation(SingleStageDetector):
                     nn.LayerNorm(self.relationship_head.feature_size),
                 )
 
+        
+            # pooling 特征学习模块
+            in_channels = 256
+            out_channels = 256
+            self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, bias=False)
+            self.bn = nn.BatchNorm2d(in_channels)
+            self.relu = nn.ReLU(inplace=True)
+            self.maxpool = nn.MaxPool2d(30)
+            
+            
+            # self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, bias=False)
+
+
+        
+    def mask_pooling_layer(self, x):
+        x = x.unsqueeze(0)
+        # print("input shape: ", x.shape)
+
+        ## 第一个resblock
+        identity = x
+
+        out = self.conv(x)
+        out = self.bn(out)
+        out = self.relu(out)
+
+        out = self.conv(out)
+        out = self.bn(out)
+
+        identity = F.interpolate(identity, size=(out.shape[2], out.shape[3]), mode="nearest")
+        out += identity
+        out = self.relu(out)
+
+        ## 第二个resblock
+        identity = out
+
+        out2 = self.conv(out)
+        out2 = self.bn(out2)
+        out2 = self.relu(out2)
+
+        out2 = self.conv(out2)
+        out2 = self.bn(out2)
+
+        
+        # shortcut连接
+        identity = F.interpolate(identity, size=(out2.shape[2], out2.shape[3]), mode="nearest")
+        out2 += identity
+        out2 = F.adaptive_max_pool2d(out2, 1)
+        # out2 = self.relu(out2)
+        
+        # print("output shape: ", out2.shape)
+        out2 = out2.squeeze()
+        out2 = out2.unsqueeze(0)
+        return out2
 
     @property
     def with_relationship(self):
@@ -121,6 +174,7 @@ class MaskFormerRelation(SingleStageDetector):
             return feature.new_zeros([output_size, feature.shape[0]])
         mask_bool = (mask >= 0.5)[0]
         feats = feature[:, mask_bool]
+        # output_size是pooling之后的特征大小，通常来说一个物体pooling到1，不够的就不断重复
         if feats.shape[1] < output_size:
             feats = torch.cat([feats] * int(np.ceil(output_size/feats.shape[1])), dim=1)
             feats = feats[:, :output_size]
@@ -131,8 +185,26 @@ class MaskFormerRelation(SingleStageDetector):
         feats_list = torch.split(feats, split_list, dim=1)
         feats_mean_list = [feat.mean(dim=1)[None] for feat in feats_list]
         feats_tensor = torch.cat(feats_mean_list, dim=0)
+
         # [output_size, 256]
         return feats_tensor
+    
+
+    def _mask_pooling_v2(self, feature, mask, output_size=1):
+        '''
+        feature [256, h, w]
+        mask [1, h, w]
+        output_size == 1: mean
+        '''
+        # mask_bool = (mask >= 0.5)[0]
+        # if mask_bool.sum() <= 0:
+            # return feature.new_zeros([output_size, feature.shape[0]])
+        # print(feature.shape, mask.shape)
+        feature = feature * mask  # 先不卡阈值，直接试试置信度图
+        feats_tensor = self.mask_pooling_layer(feature)
+
+        return feats_tensor
+
 
     def _thing_embedding(self, idx, feature, gt_thing_mask, gt_thing_label, meta_info):
         device = feature.device
@@ -152,7 +224,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         # feature_thing = feature[None] * gt_mask[:, None]
         # embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-        embedding_thing = self._mask_pooling(feature, gt_mask, output_size=self.entity_length)  # [output_size, 256]
+        embedding_thing = self._mask_pooling_v2(feature, gt_mask, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))  # [1, 256]
 
         embedding_thing = embedding_thing + cls_feature_thing
@@ -161,7 +233,7 @@ class MaskFormerRelation(SingleStageDetector):
             # background_mask = 1 - gt_mask
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
-            background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
+            background_feature = self._mask_pooling_v2(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
             embedding_thing = embedding_thing + background_feature
 
         # [output_size, 256]
@@ -179,7 +251,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         # feature_staff = feature[None] * mask_staff[:, None]
         # embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
-        embedding_staff = self._mask_pooling(feature, mask_staff, output_size=self.entity_length)  # [output_size, 256]
+        embedding_staff = self._mask_pooling_v2(feature, mask_staff, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))  # [1, 256]
 
         embedding_staff = embedding_staff + cls_feature_staff
@@ -188,7 +260,7 @@ class MaskFormerRelation(SingleStageDetector):
             # background_mask = 1 - mask_staff
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-            background_feature = self._mask_pooling(feature, 1 - mask_staff, output_size=self.entity_length)  # [output_size, 256]
+            background_feature = self._mask_pooling_v2(feature, 1 - mask_staff, output_size=self.entity_length)  # [output_size, 256]
             embedding_staff = embedding_staff + background_feature
         
         # [output_size, 256]
@@ -560,10 +632,10 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             entity_embedding_list = []
             for idx in range(len(mask_list)):
                 # embedding [self.entity_length, 256]
-                embedding = self._mask_pooling(feature_map[0], mask_tensor[idx], self.entity_length)
+                embedding = self._mask_pooling_v2(feature_map[0], mask_tensor[idx], self.entity_length)
                 embedding = embedding + cls_entity_embedding[0, idx:idx+1]
                 if self.use_background_feature:
-                    background_embedding = self._mask_pooling(feature_map[0], 1 - mask_tensor[idx], self.entity_length)
+                    background_embedding = self._mask_pooling_v2(feature_map[0], 1 - mask_tensor[idx], self.entity_length)
                     embedding = embedding + background_embedding
                 entity_embedding_list.append(embedding[None])
 
