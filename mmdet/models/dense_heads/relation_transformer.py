@@ -76,6 +76,9 @@ class BertTransformer(BaseModule):
         self.entity_part_encoder = entity_part_encoder
         self.entity_part_encoder_layers = entity_part_encoder_layers
         self.loss_mode = loss_mode
+        self.register_buffer(
+            'cum_samples',
+            torch.zeros(self.num_cls, dtype=torch.float))
 
 
     def forward(self,inputs_embeds, attention_mask=None):
@@ -190,6 +193,17 @@ class BertTransformer(BaseModule):
             input_tensor = pred.permute([0, 2, 1, 3]).reshape([bs*N, -1])
             target_tensor = target.permute([0, 2, 1, 3]).reshape([bs*N, -1])
             loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+        elif self.loss_mode == 'v4':
+            assert pred.shape[0] == 1 and target.shape[0] == 1
+            input_tensor = pred.reshape([nb_cls, -1])
+            target_tensor = target.reshape([nb_cls, -1])
+            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            # accumulate the samples for each category
+            for u_l in range(self.num_cls):
+                self.cum_samples[u_l] += target_tensor[u_l].sum()
+            loss_weight = self.cum_samples.clamp(min=1).sum() / self.cum_samples.clamp(min=1)
+            loss_weight = loss_weight.clamp(max=1000)
+            loss = loss * loss_weight
         
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
