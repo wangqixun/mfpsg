@@ -218,7 +218,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1500, 1500),
+        img_scale=(1333, 800),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -256,11 +256,11 @@ data = dict(
 evaluation = dict(metric=['pq'], classwise=True)
 
 
-backbone_norm_multi = dict(lr_mult=0.1, decay_mult=0.0)
+backbone_norm_multi = dict(lr_mult=1.0, decay_mult=0.0)
 backbone_embed_multi = dict(lr_mult=1.0, decay_mult=0.0)
 embed_multi = dict(lr_mult=1.0, decay_mult=0.0)
 custom_keys = {
-    'backbone': dict(lr_mult=0.1, decay_mult=1.0),
+    'backbone': dict(lr_mult=1.0, decay_mult=0.0),
     'backbone.patch_embed.norm': backbone_norm_multi,
     'backbone.norm': backbone_norm_multi,
     'absolute_pos_embed': backbone_embed_multi,
@@ -346,6 +346,6 @@ mp_start_method = 'fork'
 #     metric=['PQ', 'bbox', 'segm'])
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v19/latest.pth'
-# resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v19'
+# resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v19/latest.pth'
+resume_from = None
+work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v20'
