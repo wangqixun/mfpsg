@@ -6,16 +6,14 @@ num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
-data_root = "/root/autodl-tmp"
-
 model = dict(
     type='Mask2FormerRelation',
     backbone=dict(
         type='SwinTransformer',
         pretrain_img_size=384,
-        embed_dims=128,
+        embed_dims=192,
         depths=depths,
-        num_heads=[4, 8, 16, 32],
+        num_heads=[6, 12, 24, 48],
         window_size=12,
         mlp_ratio=4,
         qkv_bias=True,
@@ -32,13 +30,13 @@ model = dict(
     ),
     panoptic_head=dict(
         type='Mask2FormerRelationHead',
-        in_channels=[128, 256, 512, 1024],  # pass to pixel_decoder inside
+        in_channels=[192, 384, 768, 1536],  # pass to pixel_decoder inside
         strides=[4, 8, 16, 32],
         feat_channels=256,
         out_channels=256,
         num_things_classes=num_things_classes,
         num_stuff_classes=num_stuff_classes,
-        num_queries=100,
+        num_queries=200,
         num_transformer_feat_level=3,
         pixel_decoder=dict(
             type='MSDeformAttnPixelDecoder',
@@ -124,11 +122,11 @@ model = dict(
     ),
     relationship_head=dict(
         type='BertTransformer',
-        pretrained_transformers='./checkpoints/chinese-roberta-wwm-ext', 
+        pretrained_transformers='t5-large', 
         cache_dir='./output/tmp',
         input_feature_size=256,
-        layers_transformers=6,
-        feature_size=768,
+        layers_transformers=3,
+        feature_size=1024,
         num_classes=num_classes,
         num_cls=num_relation,
         cls_qk_size=512,
@@ -194,8 +192,9 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1500, 400), (1500, 1400)],
+        # img_scale=[(1333, 400), (1333, 800)],
         # img_scale=[(960, 540), (640, 180)],
+        img_scale=[(1500, 400), (1500, 1400)],
         multiscale_mode='range',
         keep_ratio=True),
     # dict(
@@ -219,6 +218,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
+        # img_scale=(1333, 800),
         img_scale=(1500, 1500),
         flip=False,
         transforms=[
@@ -232,26 +232,26 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=2,
-    workers_per_gpu=4,
+    samples_per_gpu=1,
+    workers_per_gpu=2,
     train=dict(
         type=dataset_type,
         ann_file='./data/psg_tra.json',
-        img_prefix=data_root,
-        seg_prefix=data_root,
+        img_prefix='../OpenPSG/data/dataset/',
+        seg_prefix='../OpenPSG/data/dataset/',
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file='./data/psg_val.json',
-        img_prefix=data_root,
-        seg_prefix=data_root,
+        img_prefix='../OpenPSG/data/dataset/',
+        seg_prefix='../OpenPSG/data/dataset/',
         ins_ann_file='./psg/data/psg_instance_val.json',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file='./data/psg_val.json',
-        img_prefix=data_root,
-        seg_prefix=data_root,
+        img_prefix='../OpenPSG/data/dataset/',
+        seg_prefix='../OpenPSG/data/dataset/',
         ins_ann_file='./data/psg_instance_val.json',
         pipeline=test_pipeline))
 evaluation = dict(metric=['pq'], classwise=True)
@@ -300,6 +300,7 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
+    # step=[27, 33])
     step=[6, 10])
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
@@ -346,7 +347,7 @@ mp_start_method = 'fork'
 #     dynamic_intervals=dynamic_intervals,
 #     metric=['PQ', 'bbox', 'segm'])
 
-load_from = './checkpoints/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-
+load_from = './checkpoints/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth'
+# resume_from = "/home/xfguo/work/train/mfpsg/output/swin-large/epoch_1.pth"
 resume_from = None
-work_dir = './output/swin-base-qixun-sota'
+work_dir = './output/swin-large-t5'

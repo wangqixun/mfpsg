@@ -79,8 +79,9 @@ class BertTransformer(BaseModule):
         self.register_buffer(
             'cum_samples',
             torch.zeros(self.num_cls, dtype=torch.float))
-
-
+        
+        
+        
     def forward(self,inputs_embeds, attention_mask=None):
         position_ids = torch.ones([1, inputs_embeds.shape[1]]).to(inputs_embeds.device).to(torch.long)
         if inputs_embeds.shape[-1] != self.feature_size:
@@ -180,30 +181,37 @@ class BertTransformer(BaseModule):
             n = torch.sum(mask_attention[idx]).to(torch.int)
             mask[idx, :, :n, :n] = 1
         pred = pred * mask - 9999 * (1 - mask)
-
+        
+        
+        
+        input_tensor, target_tensor = None, None
         if self.loss_mode == 'v1':
             input_tensor = pred.reshape([bs*nb_cls, -1])
             target_tensor = target.reshape([bs*nb_cls, -1])
-            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            category_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
         elif self.loss_mode == 'v2':
             input_tensor = pred.reshape([bs, -1])
             target_tensor = target.reshape([bs, -1])
-            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            category_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
         elif self.loss_mode == 'v3':
             input_tensor = pred.permute([0, 2, 1, 3]).reshape([bs*N, -1])
             target_tensor = target.permute([0, 2, 1, 3]).reshape([bs*N, -1])
-            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            category_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
         elif self.loss_mode == 'v4':
             assert pred.shape[0] == 1 and target.shape[0] == 1
             input_tensor = pred.reshape([nb_cls, -1])
             target_tensor = target.reshape([nb_cls, -1])
-            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            tmp_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
             # accumulate the samples for each category
             for u_l in range(self.num_cls):
                 self.cum_samples[u_l] += target_tensor[u_l].sum()
             loss_weight = self.cum_samples.clamp(min=1).sum() / self.cum_samples.clamp(min=1)
             loss_weight = loss_weight.clamp(max=1000)
-            loss = loss * loss_weight
+            category_loss = tmp_loss * loss_weight
+        
+        focal_loss = sigmoid_focal_loss(input_tensor.T, target_tensor.T)
+        
+        loss = focal_loss + category_loss
         
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
@@ -271,6 +279,7 @@ class MultiHeadCls(BaseModule):
         self.feature_size = feature_size
         self.input_feature_size = input_feature_size
         self.num_entity_max = num_entity_max
+        self.focal_loss = focal_loss(num_classes=num_classes)
 
 
     def forward(self,inputs_embeds, attention_mask=None):
@@ -324,12 +333,20 @@ class MultiHeadCls(BaseModule):
         for idx in range(bs):
             n = torch.sum(mask_attention[idx]).to(torch.int)
             mask[idx, :, :n, :n] = 1
+        
         pred = pred * mask - 9999 * (1 - mask)
-
-        loss = self.multilabel_categorical_crossentropy(target.reshape([bs*nb_cls, -1]), pred.reshape([bs*nb_cls, -1]))
+        
+        target = target.reshape([bs*nb_cls, -1])
+        pred = pred.reshape([bs*nb_cls, -1])
+        category_loss = self.multilabel_categorical_crossentropy(target, pred)
+        focal_loss = sigmoid_focal_loss(input_tensor.T, target.T)
+        
+        loss = focal_loss + category_loss
         loss = loss.mean()
+        losses["loss_focal"] = focal_loss
+        losses["loss_category"] = category_loss
         losses['loss_relationship'] = loss * self.loss_weight
-
+        
         # f1, p, r
         [f1, precise, recall], [f1_mean, precise_mean, recall_mean] = self.get_f1_p_r(pred, target, mask)
         losses['rela.F1'] = f1
@@ -364,3 +381,47 @@ class MultiHeadCls(BaseModule):
 
 
 
+def sigmoid_focal_loss(
+    inputs: torch.Tensor,
+    targets: torch.Tensor,
+    alpha: float = 0.25,
+    gamma: float = 2,
+    reduction: str = "none",
+) -> torch.Tensor:
+    """
+    Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
+    Args:
+        inputs: A float tensor of arbitrary shape.
+                The predictions for each example.
+        targets: A float tensor with the same shape as inputs. Stores the binary
+                 classification label for each element in inputs
+                (0 for the negative class and 1 for the positive class).
+        alpha: (optional) Weighting factor in range (0,1) to balance
+                positive vs negative examples. Default = -1 (no weighting).
+        gamma: Exponent of the modulating factor (1 - p_t) to
+               balance easy vs hard examples.
+        reduction: 'none' | 'mean' | 'sum'
+                 'none': No reduction will be applied to the output.
+                 'mean': The output will be averaged.
+                 'sum': The output will be summed.
+    Returns:
+        Loss tensor with the reduction option applied.
+    """
+    # print(inputs, targets)
+    inputs = inputs.float()  # (B, C)
+    targets = targets.float()  # (B, C)
+    p = torch.sigmoid(inputs)  # (B, C)
+    ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none") # (B, C)
+    p_t = p * targets + (1 - p) * (1 - targets)
+    loss = ce_loss * ((1 - p_t) ** gamma)  # (B, C)
+
+    if alpha >= 0:
+        alpha_t = alpha * targets + (1 - alpha) * (1 - targets) # # (B, C)
+        loss = alpha_t * loss # (B, C)
+
+    if reduction == "mean":
+        loss = loss.mean()
+    elif reduction == "sum":
+        loss = loss.sum()
+
+    return loss
