@@ -122,16 +122,16 @@ model = dict(
     ),
     relationship_head=dict(
         type='BertTransformer',
-        pretrained_transformers='/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext', 
-        cache_dir='/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/tmp',
+        pretrained_transformers='./checkpoints/chinese-roberta-wwm-ext', 
+        cache_dir='./output/tmp',
         input_feature_size=256,
-        layers_transformers=3,
+        layers_transformers=6,
         feature_size=768,
         num_classes=num_classes,
         num_cls=num_relation,
-        cls_qk_size=128,
+        cls_qk_size=512,
         loss_weight=50,
-        num_entity_max=50,
+        num_entity_max=30,
         use_background_feature=False,
     ),
     panoptic_fusion_head=dict(
@@ -192,8 +192,9 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        img_scale=[(1333, 400), (1333, 800)],
+        # img_scale=[(1333, 400), (1333, 800)],
         # img_scale=[(960, 540), (640, 180)],
+        img_scale=[(1500, 400), (1500, 1400)],
         multiscale_mode='range',
         keep_ratio=True),
     # dict(
@@ -217,7 +218,8 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1333, 800),
+        # img_scale=(1333, 800),
+        img_scale=(1500, 1500),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -234,29 +236,29 @@ data = dict(
     workers_per_gpu=2,
     train=dict(
         type=dataset_type,
-        ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_tra.json',
-        img_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        seg_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
+        ann_file='./data/psg_tra.json',
+        img_prefix='../OpenPSG/data/dataset/',
+        seg_prefix='../OpenPSG/data/dataset/',
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
-        ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_val.json',
-        img_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        seg_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        ins_ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_instance_val.json',
+        ann_file='./data/psg_val.json',
+        img_prefix='../OpenPSG/data/dataset/',
+        seg_prefix='../OpenPSG/data/dataset/',
+        ins_ann_file='./psg/data/psg_instance_val.json',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
-        ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_val.json',
-        img_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        seg_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        ins_ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_instance_val.json',
+        ann_file='./data/psg_val.json',
+        img_prefix='../OpenPSG/data/dataset/',
+        seg_prefix='../OpenPSG/data/dataset/',
+        ins_ann_file='./data/psg_instance_val.json',
         pipeline=test_pipeline))
-evaluation = dict(metric=['bbox', 'segm', 'pq'], classwise=True)
+evaluation = dict(metric=['pq'], classwise=True)
 
 
 backbone_norm_multi = dict(lr_mult=0.1, decay_mult=0.0)
-backbone_embed_multi = dict(lr_mult=0.1, decay_mult=0.0)
+backbone_embed_multi = dict(lr_mult=1.0, decay_mult=0.0)
 embed_multi = dict(lr_mult=1.0, decay_mult=0.0)
 custom_keys = {
     'backbone': dict(lr_mult=0.1, decay_mult=1.0),
@@ -292,13 +294,14 @@ optimizer = dict(
 optimizer_config = dict(grad_clip=dict(max_norm=0.01, norm_type=2))
 
 
-runner = dict(type='EpochBasedRunner', max_epochs=36)
+runner = dict(type='EpochBasedRunner', max_epochs=12)
 lr_config = dict(
     policy='step',
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-    step=[27, 33])
+    # step=[27, 33])
+    step=[6, 10])
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
 custom_hooks = [dict(type='NumClassCheckHook')]
@@ -344,6 +347,7 @@ mp_start_method = 'fork'
 #     dynamic_intervals=dynamic_intervals,
 #     metric=['PQ', 'bbox', 'segm'])
 
-load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth'
+load_from = './checkpoints/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth'
+# resume_from = "/home/xfguo/work/train/mfpsg/output/swin-large/epoch_1.pth"
 resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v10'
+work_dir = './output/swin-large-v2'

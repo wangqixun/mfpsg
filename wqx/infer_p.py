@@ -1,3 +1,5 @@
+import sys
+sys.path.append(".")
 from mmdet.apis import init_detector, inference_detector
 import cv2
 import numpy as np
@@ -27,18 +29,18 @@ def get_model(cfg, ckp):
 
     cfg['model']['type'] = 'Mask2FormerRelationForinfer'
 
-    cfg['model']['relationship_head']['pretrained_transformers'] = '/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext'
-    cfg['model']['relationship_head']['cache_dir'] = './'    
+    cfg['model']['relationship_head']['pretrained_transformers'] = cfg.model.relationship_head.pretrained_transformers
+    cfg['model']['relationship_head']['cache_dir'] = cfg.model.relationship_head.cache_dir
     if 'entity_length' in cfg['model']['relationship_head'] and cfg['model']['relationship_head']['entity_length'] > 1:
-        cfg['model']['relationship_head']['entity_part_encoder'] = '/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext'
+        cfg['model']['relationship_head']['entity_part_encoder'] = cfg.model.relationship_head.cache_dir
 
     model = init_detector(cfg, ckp)
     return model
 
 
 def get_tra_val_test_list():
-    psg_tra_data_file = '/share/data/psg/dataset/for_participants/psg_train_val.json'
-    psg_val_data_file = '/share/data/psg/dataset/for_participants/psg_val_test.json'
+    psg_tra_data_file = '../OpenPSG/data/dataset/for_participants/psg_train_val.json'
+    psg_val_data_file = '../OpenPSG/data/dataset/for_participants/psg_val_test.json'
     psg_tra_data = load_json(psg_tra_data_file)
     psg_val_data = load_json(psg_val_data_file)
 
@@ -70,8 +72,8 @@ def get_tra_val_test_list():
 
 
 def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
-    jpg_output_dir = f'/share/wangqixun/workspace/bs/psg/mfpsg/submit/{mode}/submission/panseg'
-    json_output_dir = f'/share/wangqixun/workspace/bs/psg/mfpsg/submit/{mode}/submission'
+    jpg_output_dir = f'./submit/{mode}/submission'
+    json_output_dir = f'./submit/{mode}/submission'
 
     if mode=='val':
         jpg_output_dir = os.path.join(val_mode_output_dir, 'submission/panseg')
@@ -85,10 +87,10 @@ def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
 
 
     tra_id_list, val_id_list, test_id_list = get_tra_val_test_list()
-    psg_val_data_file = '/share/data/psg/dataset/for_participants/psg_val_test.json'
+    psg_val_data_file = '../OpenPSG/data/dataset/for_participants/psg_val_test.json'
     psg_val_data = load_json(psg_val_data_file)
 
-    img_dir = '/share/data/psg/dataset'
+    img_dir = '../OpenPSG/data/dataset'
     model = get_model(cfg, ckp)
 
     cur_nb = -1
@@ -172,15 +174,16 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v19-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v19/epoch_30.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v19_1500_800'
+        cfg='/home/xfguo/work/train/mfpsg/configs/psg/v10-slurm.py',
+        ckp='./output/swin-large/epoch_1.pth',
+        val_mode_output_dir='./submit/swin-large'
     )
 
     # landmark
     # best v1 ep30 31.3
     # v4 ep30 32.36
     # v5 ep30 31.94
+
 
 
 
