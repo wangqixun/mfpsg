@@ -86,8 +86,46 @@ def look_zhanbi():
 
     return res
 
+
+def area_hist(relation_cls=0):
+    '''
+    subject
+    object
+    '''
+    res = load_json('/share/wangqixun/workspace/bs/psg/mfpsg/wqx/allrela.json')
+
+
+    data = []
+    for rela_info in tqdm(res['res']):
+        r_cls = rela_info['r_cls']
+        if r_cls != relation_cls:
+            continue
+        s_zhanbi = rela_info['s_zhanbi']
+        o_zhanbi = rela_info['o_zhanbi']
+        data.append([s_zhanbi, o_zhanbi])
+    data = np.array(data).reshape([-1, 2])
+
+    plt.subplot(2, 1, 1)
+    plt.title('subject')
+    plt.xlim([0, 1.0])
+    plt.hist(data[:, 0], bins=100)
+
+    plt.subplot(2, 1, 2)
+    plt.title('object')
+    plt.xlim([0, 1.0])
+    plt.hist(data[:, 1], bins=100)
+
+    plt.savefig(f'/share/wangqixun/workspace/bs/psg/mfpsg/wqx/zhanbi_rela{relation_cls}.jpg')
+    plt.close()
+
+
+    
+
+
 if __name__ == '__main__':
-    look_zhanbi()
+    # look_zhanbi()
+    for i in range(56):
+        area_hist(relation_cls=i)
 
 
 
