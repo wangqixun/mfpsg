@@ -80,6 +80,11 @@ class MaskFormerRelation(SingleStageDetector):
                     nn.Linear(self.relationship_head.feature_size, self.relationship_head.feature_size),
                     nn.LayerNorm(self.relationship_head.feature_size),
                 )
+            if hasattr(self.relationship_head, 'postional_encoding_layer') and self.relationship_head.postional_encoding_layer is not None:
+                self.add_postional_encoding = True
+            else:
+                self.add_postional_encoding = False
+            
 
 
     @property
@@ -153,9 +158,17 @@ class MaskFormerRelation(SingleStageDetector):
         # feature_thing = feature[None] * gt_mask[:, None]
         # embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
         embedding_thing = self._mask_pooling(feature, gt_mask, output_size=self.entity_length)  # [output_size, 256]
-        cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))  # [1, 256]
+        cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))  # [1, 256]            
 
         embedding_thing = embedding_thing + cls_feature_thing
+
+        if self.add_postional_encoding:
+            # [1, h, w]
+            pos_embed_zeros = feature.new_zeros((1, ) + feature.shape[-2:])
+            # [1, 256, h, w]
+            pos_embed = self.postional_encoding(pos_embed_zeros)
+            pos_embed_mask_pooling = self._mask_pooling(pos_embed[0], gt_mask, output_size=self.entity_length)
+            embedding_thing = embedding_thing + pos_embed_mask_pooling
 
         if self.use_background_feature:
             # background_mask = 1 - gt_mask
@@ -183,6 +196,15 @@ class MaskFormerRelation(SingleStageDetector):
         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))  # [1, 256]
 
         embedding_staff = embedding_staff + cls_feature_staff
+
+        if self.add_postional_encoding:
+            # [1, h, w]
+            pos_embed_zeros = feature.new_zeros((1, ) + feature.shape[-2:])
+            # [1, 256, h, w]
+            pos_embed = self.postional_encoding(pos_embed_zeros)
+            pos_embed_mask_pooling = self._mask_pooling(pos_embed[0], mask_staff, output_size=self.entity_length)
+            embedding_staff = embedding_staff + pos_embed_mask_pooling
+
 
         if self.use_background_feature:
             # background_mask = 1 - mask_staff

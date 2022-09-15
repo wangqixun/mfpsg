@@ -70,7 +70,7 @@ class BertTransformer(BaseModule):
         self.num_classes = num_classes
         if positional_encoding is not None:
             self.positional_encoding_cfg = positional_encoding
-            self.postional_encoding = build_positional_encoding(positional_encoding)
+            self.postional_encoding_layer = build_positional_encoding(positional_encoding)
         self.use_background_feature = use_background_feature
         self.entity_length = entity_length
         self.entity_part_encoder = entity_part_encoder
