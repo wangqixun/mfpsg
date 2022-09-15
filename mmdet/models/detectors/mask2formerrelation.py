@@ -166,7 +166,7 @@ class MaskFormerRelation(SingleStageDetector):
             # [1, h, w]
             pos_embed_zeros = feature.new_zeros((1, ) + feature.shape[-2:])
             # [1, 256, h, w]
-            pos_embed = self.postional_encoding(pos_embed_zeros)
+            pos_embed = self.relationship_head.postional_encoding_layer(pos_embed_zeros)
             pos_embed_mask_pooling = self._mask_pooling(pos_embed[0], gt_mask, output_size=self.entity_length)
             embedding_thing = embedding_thing + pos_embed_mask_pooling
 
@@ -201,7 +201,7 @@ class MaskFormerRelation(SingleStageDetector):
             # [1, h, w]
             pos_embed_zeros = feature.new_zeros((1, ) + feature.shape[-2:])
             # [1, 256, h, w]
-            pos_embed = self.postional_encoding(pos_embed_zeros)
+            pos_embed = self.relationship_head.postional_encoding_layer(pos_embed_zeros)
             pos_embed_mask_pooling = self._mask_pooling(pos_embed[0], mask_staff, output_size=self.entity_length)
             embedding_staff = embedding_staff + pos_embed_mask_pooling
 
