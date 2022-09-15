@@ -6,6 +6,8 @@ num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
+data_root = "/root/autodl-nas"
+
 
 model = dict(
     type='Mask2FormerRelation',
@@ -124,7 +126,7 @@ model = dict(
     relationship_head=dict(
         type='BertTransformer',
         pretrained_transformers='./checkpoints/chinese-roberta-wwm-ext', 
-        cache_dir='./output/tmp',
+        cache_dir='/root/output/tmp',
         input_feature_size=256,
         layers_transformers=6,
         feature_size=768,
@@ -238,21 +240,21 @@ data = dict(
     train=dict(
         type=dataset_type,
         ann_file='./data/psg_tra.json',
-        img_prefix='../OpenPSG/data/dataset/',
-        seg_prefix='../OpenPSG/data/dataset/',
+        img_prefix=data_root,
+        seg_prefix=data_root,
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file='./data/psg_val.json',
-        img_prefix='../OpenPSG/data/dataset/',
-        seg_prefix='../OpenPSG/data/dataset/',
+        img_prefix=data_root,
+        seg_prefix=data_root,
         ins_ann_file='./psg/data/psg_instance_val.json',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file='./data/psg_val.json',
-        img_prefix='../OpenPSG/data/dataset/',
-        seg_prefix='../OpenPSG/data/dataset/',
+        img_prefix=data_root,
+        seg_prefix=data_root,
         ins_ann_file='./data/psg_instance_val.json',
         pipeline=test_pipeline))
 evaluation = dict(metric=['pq'], classwise=True)
@@ -349,6 +351,7 @@ mp_start_method = 'fork'
 #     metric=['PQ', 'bbox', 'segm'])
 
 load_from = './checkpoints/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth'
-# resume_from = "/home/xfguo/work/train/mfpsg/output/swin-large/epoch_1.pth"
-resume_from = None
-work_dir = './output/swin-large-v2'
+resume_from = "/root/autodl-nas/output/swin-large-v2/latest.pth"
+# resume_from = None
+work_dir = '/root/autodl-nas/output/swin-large-v2'
+

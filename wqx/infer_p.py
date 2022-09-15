@@ -39,8 +39,8 @@ def get_model(cfg, ckp):
 
 
 def get_tra_val_test_list():
-    psg_tra_data_file = '../OpenPSG/data/dataset/for_participants/psg_train_val.json'
-    psg_val_data_file = '../OpenPSG/data/dataset/for_participants/psg_val_test.json'
+    psg_tra_data_file = '/root/autodl-nas/for_participants/psg_train_val.json'
+    psg_val_data_file = '/root/autodl-nas/for_participants/psg_val_test.json'
     psg_tra_data = load_json(psg_tra_data_file)
     psg_val_data = load_json(psg_val_data_file)
 
@@ -87,10 +87,10 @@ def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
 
 
     tra_id_list, val_id_list, test_id_list = get_tra_val_test_list()
-    psg_val_data_file = '../OpenPSG/data/dataset/for_participants/psg_val_test.json'
+    psg_val_data_file = '/root/autodl-nas/for_participants/psg_val_test.json'
     psg_val_data = load_json(psg_val_data_file)
 
-    img_dir = '../OpenPSG/data/dataset'
+    img_dir = '/root/autodl-nas'
     model = get_model(cfg, ckp)
 
     cur_nb = -1
@@ -174,9 +174,9 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/home/xfguo/work/train/mfpsg/configs/psg/v10-slurm.py',
-        ckp='./output/swin-large/epoch_1.pth',
-        val_mode_output_dir='./submit/swin-large'
+        cfg='/root/mfpsg/configs/psg/v102.py',
+        ckp='/root/autodl-nas/output/swin-base-qixun-sota-focal-loss/latest.pth',
+        val_mode_output_dir='/root/autodl-nas/submit/swin-base-qixun-sota-focal-loss'
     )
 
     # landmark

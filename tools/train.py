@@ -242,3 +242,14 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
+    # 退出消息
+    import requests, sys
+    resp = requests.get(
+        "https://www.autodl.com/api/v1/wechat/message/push?token={token}&title={title}&name={name}&content={content}".format(
+            token="1e0c03fccf9c",
+            title="模型训练完毕",
+            name="PSG",
+            content=str(sys.argv))
+    )
+    print(resp.content.decode())

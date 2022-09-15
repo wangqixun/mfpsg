@@ -125,7 +125,7 @@ model = dict(
     relationship_head=dict(
         type='BertTransformer',
         pretrained_transformers='./checkpoints/chinese-roberta-wwm-ext', 
-        cache_dir='./output/tmp',
+        cache_dir='/root/output/tmp',
         input_feature_size=256,
         layers_transformers=6,
         feature_size=768,
@@ -348,5 +348,5 @@ mp_start_method = 'fork'
 
 load_from = './checkpoints/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 
-resume_from = None
-work_dir = './output/swin-base-qixun-sota-focal-loss'
+resume_from = "/root/autodl-nas/output/swin-base-qixun-sota-focal-loss/latest.pth"
+work_dir = '/root/autodl-nas/output/swin-base-qixun-sota-focal-loss/'
