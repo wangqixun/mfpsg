@@ -37,6 +37,7 @@ class BertTransformer(BaseModule):
         entity_part_encoder='/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext',
         entity_part_encoder_layers=6,
         loss_mode='v1',
+        loss_alpha=None,
     ):
         '''
             loss_mode = 'v1'
@@ -76,6 +77,7 @@ class BertTransformer(BaseModule):
         self.entity_part_encoder = entity_part_encoder
         self.entity_part_encoder_layers = entity_part_encoder_layers
         self.loss_mode = loss_mode
+        self.loss_alpha = loss_alpha
         self.register_buffer(
             'cum_samples',
             torch.zeros(self.num_cls, dtype=torch.float))
@@ -204,7 +206,14 @@ class BertTransformer(BaseModule):
             loss_weight = self.cum_samples.clamp(min=1).sum() / self.cum_samples.clamp(min=1)
             loss_weight = loss_weight.clamp(max=1000)
             loss = loss * loss_weight
-        
+        elif self.loss_mode == 'v5':
+            assert pred.shape[0] == 1 and target.shape[0] == 1
+            input_tensor = pred.reshape([nb_cls, -1])
+            target_tensor = target.reshape([nb_cls, -1])
+            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            weight = (loss / loss.max()) ** self.loss_alpha
+            loss = loss * weight
+
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
 

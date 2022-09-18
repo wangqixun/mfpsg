@@ -584,9 +584,21 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                 # embedding [self.entity_length, 256]
                 embedding = self._mask_pooling(feature_map[0], mask_tensor[idx], self.entity_length)
                 embedding = embedding + cls_entity_embedding[0, idx:idx+1]
+
+                if self.add_postional_encoding:
+                    # [1, h, w]
+                    pos_embed_zeros = feature_map[0].new_zeros((1, ) + feature_map[0].shape[-2:])
+                    # [1, 256, h, w]
+                    pos_embed = self.relationship_head.postional_encoding_layer(pos_embed_zeros)
+                    pos_embed_mask_pooling = self._mask_pooling(pos_embed[0], mask_tensor[idx], output_size=self.entity_length)
+                    embedding = embedding + pos_embed_mask_pooling
+
+
                 if self.use_background_feature:
                     background_embedding = self._mask_pooling(feature_map[0], 1 - mask_tensor[idx], self.entity_length)
                     embedding = embedding + background_embedding
+
+                
                 entity_embedding_list.append(embedding[None])
 
             # embedding [1, n*self.entity_length, 256]
@@ -599,6 +611,14 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             entity_embedding = entity_embedding[None]
             entity_embedding = entity_embedding + cls_entity_embedding
             
+            if self.add_postional_encoding:
+                pos_embed_zeros = feature_map[0].new_zeros((1, ) + feature_map[0].shape[-2:])
+                pos_embed = self.relationship_head.postional_encoding_layer(pos_embed_zeros)
+                for idx in range(entity_embedding.shape[1]):
+                    pos_embed_mask_pooling = self._mask_pooling(pos_embed[0], mask_tensor[idx], output_size=self.entity_length)
+                    entity_embedding[0, idx] = entity_embedding[0, idx] + pos_embed_mask_pooling
+
+
             if self.use_background_feature:
                 background_mask = 1 - mask_tensor
                 background_feature = (feature_map * background_mask).sum(dim=[2, 3]) / (background_mask.sum(dim=[2, 3]) + 1e-8)
