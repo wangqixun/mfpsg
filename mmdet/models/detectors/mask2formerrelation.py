@@ -143,7 +143,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         mask = feature.new_zeros([1, h, w])
         mask[:, y1:y2, x1:x2] = 1
-        embedding = self._mask_pooling(feature[0], mask, output_size=1)
+        embedding = self._mask_pooling(feature, mask, output_size=1)
         # [self.entity_length, 256]
         return embedding
 
