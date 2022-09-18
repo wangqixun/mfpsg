@@ -115,7 +115,7 @@ class MaskFormerRelation(SingleStageDetector):
         '''
         feature [bs, 256, h, w]
         '''
-        bs, c, h, w = feature.shape
+        c, h, w = feature.shape
         device = feature.device
         dtype = feature.dtype
 
