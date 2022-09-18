@@ -121,9 +121,9 @@ class MaskFormerRelation(SingleStageDetector):
 
         x_center = 0.1 + np.random.rand() * 0.8
         y_center = 0.1 + np.random.rand() * 0.8
-        half_w_max = np.min(x_center, 1-x_center)
+        half_w_max = min(x_center, 1-x_center)
         half_w = np.random.rand() * half_w_max
-        half_h_max = np.min(y_center, 1-y_center)
+        half_h_max = min(y_center, 1-y_center)
         half_h = np.random.rand() * half_h_max
 
         x1 = (x_center - half_w) * w
