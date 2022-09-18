@@ -84,6 +84,7 @@ class MaskFormerRelation(SingleStageDetector):
                 self.add_postional_encoding = True
             else:
                 self.add_postional_encoding = False
+            self.train_add_noise_mask = self.relationship_head.train_add_noise_mask
             
 
 
@@ -109,6 +110,42 @@ class MaskFormerRelation(SingleStageDetector):
         x = self.extract_feat(img)
         outs = self.panoptic_head(x, img_metas)
         return outs
+
+    def _get_noise_embedding(self, feature):
+        '''
+        feature [bs, 256, h, w]
+        '''
+        bs, c, h, w = feature.shape
+        device = feature.device
+        dtype = feature.dtype
+
+        x_center = 0.1 + np.random.rand() * 0.8
+        y_center = 0.1 + np.random.rand() * 0.8
+        half_w_max = np.min(x_center, 1-x_center)
+        half_w = np.random.rand() * half_w_max
+        half_h_max = np.min(y_center, 1-y_center)
+        half_h = np.random.rand() * half_h_max
+
+        x1 = (x_center - half_w) * w
+        x2 = (x_center + half_w) * w
+        y1 = (y_center - half_h) * h
+        y2 = (y_center + half_h) * h
+
+        x1 = np.clip(x1, 0, w)
+        x2 = np.clip(x2, 0, w)
+        y1 = np.clip(y1, 0, h)
+        y2 = np.clip(y2, 0, h)
+
+        x1 = np.floor(x1).astype(int)
+        x2 = np.ceil(x2).astype(int)
+        y1 = np.floor(y1).astype(int)
+        y2 = np.ceil(y2).astype(int)
+
+        mask = feature.new_zeros([1, h, w])
+        mask[:, y1:y2, x1:x2] = 1
+        embedding = self._mask_pooling(feature[0], mask, output_size=1)
+        # [self.entity_length, 256]
+        return embedding
 
     def _id_is_thing(self, old_idx, gt_thing_label):
         if old_idx < len(gt_thing_label):
@@ -242,6 +279,8 @@ class MaskFormerRelation(SingleStageDetector):
         # meta_info: dict
         # gt_thing_mask: bitmap, n
         # gt_thing_label: 
+        device = feature.device
+        dtype = feature.dtype
 
         masks = meta_info['masks']
         num_keep = min(self.num_entity_max, len(masks))
@@ -257,6 +296,27 @@ class MaskFormerRelation(SingleStageDetector):
             embedding_list.append(embedding[None])
         # [1, n * self.entity_length, 256]
         embedding = torch.cat(embedding_list, dim=1)
+
+        if self.train_add_noise_mask:
+            noise_embedding_list = []
+            noise_class_list = []
+            for idx, old in enumerate(keep_idx_list):
+                if self._id_is_thing(old, gt_thing_label):
+                    noise_class = gt_thing_label[old] # tensor
+                else:
+                    noise_class = torch.tensor(masks[old]['category']).to(device).to(torch.long)
+                noise_embedding = self._get_noise_embedding(feature)  # [self.entity_length, 256]
+                noise_class_list.append(noise_class)
+                noise_embedding_list.append(noise_embedding[None])
+            noise_class_tensor = torch.cat(noise_class_list).reshape([-1, ])
+            noise_class_embedding = self.rela_cls_embed(noise_class_tensor)  # [n, 256]
+            noise_embedding_tensor = torch.cat(noise_embedding_list, dim=1)  # [1, n * self.entity_length, 256]
+
+            noise_class_embedding = torch.repeat_interleave(noise_class_embedding, self.entity_length, dim=0)[None]
+            noise_embedding_tensor = noise_embedding_tensor + noise_class_embedding
+
+            embedding = torch.cat([embedding, noise_embedding_tensor], dim=1) # [1, 2*n*self.entity_length, 256]
+
 
         if self.entity_length > 1:
             embedding = self._entity_encode(embedding)

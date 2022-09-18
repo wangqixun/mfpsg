@@ -38,6 +38,7 @@ class BertTransformer(BaseModule):
         entity_part_encoder_layers=6,
         loss_mode='v1',
         loss_alpha=None,
+        train_add_noise_mask=False,
     ):
         '''
             loss_mode = 'v1'
@@ -78,6 +79,7 @@ class BertTransformer(BaseModule):
         self.entity_part_encoder_layers = entity_part_encoder_layers
         self.loss_mode = loss_mode
         self.loss_alpha = loss_alpha
+        self.train_add_noise_mask = train_add_noise_mask
         self.register_buffer(
             'cum_samples',
             torch.zeros(self.num_cls, dtype=torch.float))
