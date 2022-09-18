@@ -26,9 +26,10 @@ model = dict(
     relationship_head=dict(
         num_entity_max=50,
         use_background_feature=True,
-        entity_length=8,
-        entity_part_encoder='/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext',
-        entity_part_encoder_layers=6,
+        # entity_length=8,
+        # entity_part_encoder='/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext',
+        # entity_part_encoder_layers=6,
+        train_add_noise_mask=True,
     ),
     panoptic_head=dict(
         in_channels=[96, 192, 384, 768]),

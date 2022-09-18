@@ -308,7 +308,7 @@ class MaskFormerRelation(SingleStageDetector):
                 noise_embedding = self._get_noise_embedding(feature)  # [self.entity_length, 256]
                 noise_class_list.append(noise_class)
                 noise_embedding_list.append(noise_embedding[None])
-            noise_class_tensor = torch.cat(noise_class_list).reshape([-1, ])
+            noise_class_tensor = torch.tensor(noise_class_list).to(device).reshape([-1, ])
             noise_class_embedding = self.rela_cls_embed(noise_class_tensor)  # [n, 256]
             noise_embedding_tensor = torch.cat(noise_embedding_list, dim=1)  # [1, n * self.entity_length, 256]
 
