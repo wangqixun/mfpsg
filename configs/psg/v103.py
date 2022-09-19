@@ -8,15 +8,14 @@ depths = [2, 2, 18, 2]
 
 data_root = "/root/autodl-nas"
 
-
 model = dict(
     type='Mask2FormerRelation',
     backbone=dict(
         type='SwinTransformer',
         pretrain_img_size=384,
-        embed_dims=192,
+        embed_dims=128,
         depths=depths,
-        num_heads=[6, 12, 24, 48],
+        num_heads=[4, 8, 16, 32],
         window_size=12,
         mlp_ratio=4,
         qkv_bias=True,
@@ -33,13 +32,13 @@ model = dict(
     ),
     panoptic_head=dict(
         type='Mask2FormerRelationHead',
-        in_channels=[192, 384, 768, 1536],  # pass to pixel_decoder inside
+        in_channels=[128, 256, 512, 1024],  # pass to pixel_decoder inside
         strides=[4, 8, 16, 32],
         feat_channels=256,
         out_channels=256,
         num_things_classes=num_things_classes,
         num_stuff_classes=num_stuff_classes,
-        num_queries=200,
+        num_queries=100,
         num_transformer_feat_level=3,
         pixel_decoder=dict(
             type='MSDeformAttnPixelDecoder',
@@ -195,9 +194,8 @@ train_pipeline = [
     #     keep_ratio=True),
     dict(
         type='Resize',
-        # img_scale=[(1333, 400), (1333, 800)],
-        # img_scale=[(960, 540), (640, 180)],
         img_scale=[(1500, 400), (1500, 1400)],
+        # img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),
     # dict(
@@ -221,7 +219,6 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        # img_scale=(1333, 800),
         img_scale=(1500, 1500),
         flip=False,
         transforms=[
@@ -235,7 +232,7 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
+    samples_per_gpu=2,
     workers_per_gpu=2,
     train=dict(
         type=dataset_type,
@@ -303,7 +300,6 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-    # step=[27, 33])
     step=[6, 10])
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
@@ -350,8 +346,8 @@ mp_start_method = 'fork'
 #     dynamic_intervals=dynamic_intervals,
 #     metric=['PQ', 'bbox', 'segm'])
 
-load_from = './checkpoints/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth'
-resume_from = "/root/autodl-tmp/output/swin-large-v2/latest.pth"
-# resume_from = None
-work_dir = '/root/autodl-tmp/output/swin-large-v2'
+load_from = './checkpoints/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 
+# resume_from = "/root/autodl-nas/output/swin-base-focal-loss-feature-merge/latest.pth"
+resume_from = None
+work_dir = '/root/autodl-nas/output/swin-base-focal-loss-feature-merge/'

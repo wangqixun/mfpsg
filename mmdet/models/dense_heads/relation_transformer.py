@@ -209,9 +209,9 @@ class BertTransformer(BaseModule):
             loss_weight = loss_weight.clamp(max=1000)
             category_loss = tmp_loss * loss_weight
         
-        # focal_loss = sigmoid_focal_loss(input_tensor.T, target_tensor.T)
+        focal_loss = sigmoid_focal_loss(input_tensor.T, target_tensor.T)
         
-        loss = category_loss # + focal_loss
+        loss = category_loss + focal_loss
         
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
@@ -339,9 +339,9 @@ class MultiHeadCls(BaseModule):
         target = target.reshape([bs*nb_cls, -1])
         pred = pred.reshape([bs*nb_cls, -1])
         category_loss = self.multilabel_categorical_crossentropy(target, pred)
-        # focal_loss = sigmoid_focal_loss(input_tensor.T, target.T)
+        focal_loss = sigmoid_focal_loss(input_tensor.T, target.T)
         
-        loss = category_loss # + focal_loss
+        loss = category_loss + focal_loss
         loss = loss.mean()
         losses["loss_focal"] = focal_loss
         losses["loss_category"] = category_loss

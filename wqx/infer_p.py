@@ -174,9 +174,9 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/root/mfpsg/configs/psg/v102.py',
-        ckp='/root/autodl-nas/output/swin-base-qixun-sota-focal-loss/latest.pth',
-        val_mode_output_dir='/root/autodl-nas/submit/swin-base-qixun-sota-focal-loss'
+        cfg='/root/mfpsg/configs/psg/v100.py',
+        ckp='/root/autodl-tmp/output/swin-large-v2/latest.pth',
+        val_mode_output_dir='/root/autodl-nas/submit/swin-large-v2'
     )
 
     # landmark
