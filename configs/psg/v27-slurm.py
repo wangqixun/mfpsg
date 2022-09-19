@@ -258,6 +258,7 @@ evaluation = dict(metric=['pq'], classwise=True)
 
 backbone_norm_multi = dict(lr_mult=0.0, decay_mult=0.0)
 backbone_embed_multi = dict(lr_mult=0.0, decay_mult=0.0)
+panoptic_multi = dict(lr_mult=0.0, decay_mult=0.0)
 embed_multi = dict(lr_mult=0.0, decay_mult=0.0)
 custom_keys = {
     'backbone': dict(lr_mult=0.0, decay_mult=0.0),
@@ -267,7 +268,9 @@ custom_keys = {
     'relative_position_bias_table': backbone_embed_multi,
     'query_embed': embed_multi,
     'query_feat': embed_multi,
-    'level_embed': embed_multi
+    'level_embed': embed_multi,
+    'panoptic_head': panoptic_multi,
+    'panoptic_fusion_head': panoptic_multi,
 }
 custom_keys.update({
     f'backbone.stages.{stage_id}.blocks.{block_id}.norm': backbone_norm_multi
