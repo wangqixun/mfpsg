@@ -215,6 +215,13 @@ class BertTransformer(BaseModule):
             loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
             weight = (loss / loss.max()) ** self.loss_alpha
             loss = loss * weight
+        elif self.loss_mode == 'v6':
+            assert pred.shape[0] == 1 and target.shape[0] == 1
+            input_tensor = pred.reshape([nb_cls*N, -1])
+            target_tensor = target.reshape([nb_cls*N, -1])
+            loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
+            weight = (loss / loss.max()) ** self.loss_alpha
+            loss = loss * weight
 
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
