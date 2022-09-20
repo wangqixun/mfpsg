@@ -164,9 +164,9 @@ class MaskFormerRelation(SingleStageDetector):
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
             background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
-            # embedding_thing = embedding_thing + background_feature
+            embedding_thing = embedding_thing + background_feature
             # 一种新的背景融合方式
-            embedding_thing = self.relu(embedding_thing + background_feature) - (embedding_thing - background_feature)**2
+            # embedding_thing = self.relu(embedding_thing + background_feature) - (embedding_thing - background_feature)**2
 
         # [output_size, 256]
         return embedding_thing
@@ -193,8 +193,8 @@ class MaskFormerRelation(SingleStageDetector):
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
             background_feature = self._mask_pooling(feature, 1 - mask_staff, output_size=self.entity_length)  # [output_size, 256]
-            # embedding_staff = embedding_staff + background_feature
-            embedding_staff = self.relu(embedding_staff + background_feature) - (embedding_staff - background_feature)**2
+            embedding_staff = embedding_staff + background_feature
+            # embedding_staff = self.relu(embedding_staff + background_feature) - (embedding_staff - background_feature)**2
         
         # [output_size, 256]
         return embedding_staff
@@ -569,8 +569,8 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                 embedding = embedding + cls_entity_embedding[0, idx:idx+1]
                 if self.use_background_feature:
                     background_embedding = self._mask_pooling(feature_map[0], 1 - mask_tensor[idx], self.entity_length)
-                    # embedding = embedding + background_embedding
-                    embedding = self.relu(embedding + background_feature) - (embedding - background_feature)**2
+                    embedding = embedding + background_embedding
+                    # embedding = self.relu(embedding + background_feature) - (embedding - background_feature)**2
 
                 entity_embedding_list.append(embedding[None])
 
