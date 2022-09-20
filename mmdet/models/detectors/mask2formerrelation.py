@@ -35,6 +35,9 @@ class MaskFormerRelation(SingleStageDetector):
                  test_cfg=None,
                  init_cfg=None):
         super(SingleStageDetector, self).__init__(init_cfg=init_cfg)
+
+        freeze_layers = train_cfg.pop('freeze_layers', [])
+
         self.backbone = build_backbone(backbone)
         if neck is not None:
             self.neck = build_neck(neck)
@@ -86,6 +89,13 @@ class MaskFormerRelation(SingleStageDetector):
                 self.add_postional_encoding = False
             self.train_add_noise_mask = self.relationship_head.train_add_noise_mask
             
+
+        for layer_name in freeze_layers:
+            m = getattr(self, layer_name)
+            m.eval()
+            for param in m.parameters():
+                param.requires_grad = False
+            m.make_layer_can_be_train = nn.Linear(1, 1)
 
 
     @property

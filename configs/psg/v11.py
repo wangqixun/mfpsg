@@ -33,8 +33,17 @@ model = dict(
     ),
     panoptic_head=dict(
         in_channels=[96, 192, 384, 768]),
-    init_cfg=None)
-        
+    init_cfg=None,
+    train_cfg=dict(
+        freeze_layers = [
+            # 'backbone',
+            # 'panoptic_head',
+            # 'panoptic_fusion_head',
+        ]
+    ),
+)
+
+find_unused_parameters = True
 
 data = dict(
     samples_per_gpu=2,
@@ -73,7 +82,7 @@ optimizer = dict(
     weight_decay=0.05,
     eps=1e-8,
     betas=(0.9, 0.999),
-    paramwise_cfg=dict(custom_keys=custom_keys, norm_decay_mult=0.0))
+    paramwise_cfg=dict(custom_keys={}, norm_decay_mult=0.0))
 
 
 load_from = '/share/wangqixun/workspace/github_project/mmdetection_checkpoint/model_dl/mask2former_swin-t-p4-w7-224_lsj_8x2_50e_coco-panoptic_20220326_224553-fc567107.pth'
