@@ -30,13 +30,13 @@ model = dict(
     ),
     panoptic_head=dict(
         type='Mask2FormerRelationHead',
-        in_channels=[128, 256, 512, 1024],  # pass to pixel_decoder inside
+        in_channels=[192, 384, 768, 1536],  # pass to pixel_decoder inside
         strides=[4, 8, 16, 32],
         feat_channels=256,
         out_channels=256,
         num_things_classes=num_things_classes,
         num_stuff_classes=num_stuff_classes,
-        num_queries=100,
+        num_queries=200,
         num_transformer_feat_level=3,
         pixel_decoder=dict(
             type='MSDeformAttnPixelDecoder',
