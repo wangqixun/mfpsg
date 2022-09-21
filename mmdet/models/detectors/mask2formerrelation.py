@@ -91,6 +91,7 @@ class MaskFormerRelation(SingleStageDetector):
             else:
                 self.add_postional_encoding = False
             self.train_add_noise_mask = self.relationship_head.train_add_noise_mask
+            self.embedding_add_cls = self.relationship_head.embedding_add_cls
             
 
         for layer_name in freeze_layers:
@@ -210,7 +211,8 @@ class MaskFormerRelation(SingleStageDetector):
         embedding_thing = self._mask_pooling(feature, gt_mask, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))  # [1, 256]            
 
-        embedding_thing = embedding_thing + cls_feature_thing
+        if self.embedding_add_cls:
+            embedding_thing = embedding_thing + cls_feature_thing
 
         if self.add_postional_encoding:
             # [1, h, w]
@@ -245,7 +247,8 @@ class MaskFormerRelation(SingleStageDetector):
         embedding_staff = self._mask_pooling(feature, mask_staff, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))  # [1, 256]
 
-        embedding_staff = embedding_staff + cls_feature_staff
+        if self.embedding_add_cls:
+            embedding_staff = embedding_staff + cls_feature_staff
 
         if self.add_postional_encoding:
             # [1, h, w]
