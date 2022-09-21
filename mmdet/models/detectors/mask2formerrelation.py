@@ -92,7 +92,7 @@ class MaskFormerRelation(SingleStageDetector):
                 self.add_postional_encoding = False
             self.train_add_noise_mask = self.relationship_head.train_add_noise_mask
             self.embedding_add_cls = self.relationship_head.embedding_add_cls
-            
+            self.mask_shake = self.relationship_head.mask_shake            
 
         for layer_name in freeze_layers:
             m = getattr(self, layer_name)
@@ -167,6 +167,42 @@ class MaskFormerRelation(SingleStageDetector):
         else:
             return False
 
+    def _tensor_erode(self, bin_img, ksize=3):
+
+        B, C, H, W = bin_img.shape
+        pad = (ksize - 1) // 2
+        bin_img = F.pad(bin_img, [pad, pad, pad, pad], mode='constant', value=0)
+
+        patches = bin_img.unfold(dimension=2, size=ksize, step=1)
+        patches = patches.unfold(dimension=3, size=ksize, step=1)
+
+        eroded, _ = patches.reshape(B, C, H, W, -1).min(dim=-1)
+        return eroded
+
+    def _tensor_dilate(self, bin_img, ksize=3):
+        B, C, H, W = bin_img.shape
+        pad = (ksize - 1) // 2
+        bin_img = F.pad(bin_img, [pad, pad, pad, pad], mode='constant', value=0)
+
+        patches = bin_img.unfold(dimension=2, size=ksize, step=1)
+        patches = patches.unfold(dimension=3, size=ksize, step=1)
+
+        dilate, _ = patches.reshape(B, C, H, W, -1).max(dim=-1)
+        return dilate
+
+    def _tensor_mask_shake(self, mask):
+        '''
+        mask [1, h, w]
+        '''
+        if np.random.rand() < 0.5:
+            func = self._tensor_erode
+        else:
+            func = self._tensor_dilate
+        ksize = np.random.randint(15)
+        res_mask = func(mask[None], ksize)[0]
+        return res_mask
+
+
     def _mask_pooling(self, feature, mask, output_size=1):
         '''
         feature [256, h, w]
@@ -208,6 +244,10 @@ class MaskFormerRelation(SingleStageDetector):
 
         # feature_thing = feature[None] * gt_mask[:, None]
         # embedding_thing = feature_thing.sum(dim=[-2, -1]) / (gt_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
+
+        if self.mask_shake:
+            gt_mask = self._tensor_mask_shake(gt_mask)
+
         embedding_thing = self._mask_pooling(feature, gt_mask, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_thing = self.rela_cls_embed(gt_thing_label[idx: idx + 1].reshape([-1, ]))  # [1, 256]            
 
@@ -244,6 +284,10 @@ class MaskFormerRelation(SingleStageDetector):
 
         # feature_staff = feature[None] * mask_staff[:, None]
         # embedding_staff = feature_staff.sum(dim=[-2, -1]) / (mask_staff[:, None].sum(dim=[-2, -1]) + 1e-8)
+
+        if self.mask_shake:
+            mask_staff = self._tensor_mask_shake(mask_staff)
+
         embedding_staff = self._mask_pooling(feature, mask_staff, output_size=self.entity_length)  # [output_size, 256]
         cls_feature_staff = self.rela_cls_embed(label_staff.reshape([-1, ]))  # [1, 256]
 
