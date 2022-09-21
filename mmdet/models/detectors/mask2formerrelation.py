@@ -36,7 +36,10 @@ class MaskFormerRelation(SingleStageDetector):
                  init_cfg=None):
         super(SingleStageDetector, self).__init__(init_cfg=init_cfg)
 
-        freeze_layers = train_cfg.pop('freeze_layers', [])
+        if train_cfg is not None:
+            freeze_layers = train_cfg.pop('freeze_layers', [])
+        else:
+            freeze_layers = []
 
         self.backbone = build_backbone(backbone)
         if neck is not None:
@@ -759,13 +762,9 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             relationship_output = relationship_output * entity_score_tensor[None, None, :]
 
             # relationship weight
-            for ratio_th, weight in [
-                [[0, 0.01], 15], 
-                # [[0, 0.01], 300],
-                # [[0.001, 0.01], 300],
-            ]:
-                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-                relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
+            # for ratio_th, weight in [[[0, 0.5/100], 10],  ]:
+            #     mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
+            #     relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
             # for idx_rela in [8, 11, 19, 25, 26, 29, 31, 32, 34, 35, 36, 39, 40, 41, 42, 51, 53, 54]:
             # for idx_rela in [50, 25, 40, 29]:  # 0.5+
             #     relationship_output[idx_rela] = relationship_output[idx_rela] * 300

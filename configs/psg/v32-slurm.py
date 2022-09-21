@@ -133,7 +133,7 @@ model = dict(
         loss_weight=50,
         num_entity_max=30,
         use_background_feature=False,
-        loss_mode='v6',
+        loss_mode='v5',
         loss_alpha=1,
     ),
     panoptic_fusion_head=dict(
@@ -225,8 +225,8 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        # img_scale=(1333, 800),
-        img_scale=(1500, 1500),
+        img_scale=(1333, 800),
+        # img_scale=(1500, 1500),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -359,4 +359,4 @@ mp_start_method = 'fork'
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth'
 # resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v30/latest.pth'
 resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v31'
+work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v32'

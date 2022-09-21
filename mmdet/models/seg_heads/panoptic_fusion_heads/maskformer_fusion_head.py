@@ -8,6 +8,8 @@ from mmdet.models.builder import HEADS
 from .base_panoptic_fusion_head import BasePanopticFusionHead
 
 from IPython import embed
+import cv2
+import numpy as np
 
 @HEADS.register_module()
 class MaskFormerFusionHead(BasePanopticFusionHead):
@@ -67,47 +69,74 @@ class MaskFormerFusionHead(BasePanopticFusionHead):
             # We didn't detect any mask :(
             pass
         else:
-            # cur_mask_ids = cur_prob_masks.argmax(0)
-            cur_mask_score, cur_mask_ids = cur_prob_masks.max(dim=0)
-            instance_id = 1
-            for k in range(cur_classes.shape[0]):
-                # pred_class = int(cur_classes[k].item())
-                pred_class = cur_classes[k].to(torch.long)
-                isthing = pred_class < self.num_things_classes
-                mask = cur_mask_ids == k
-                mask_area = mask.sum().item()
-                original_area = (cur_masks[k] >= 0.5).sum().item()
-
-                score = cur_mask_score[mask].mean()
-
-                if filter_low_score:
-                    mask = mask & (cur_masks[k] >= 0.5)
-
-                if mask_area > 0 and original_area > 0:
-                    if mask_area / original_area < iou_thr:
+            mode = 'raw'
+            if mode == 'area':
+                areas = (cur_masks>=0.5).sum(dim=[1,2])
+                area_tensor, idx_tensor = torch.sort(areas)
+                instance_id = 1
+                for area, idx_cur in zip(area_tensor.flip(dims=[0]), idx_tensor.flip(dims=[0])):
+                    if area <= 0:
                         continue
+                    pred_class = cur_classes[idx_cur].to(torch.long)
+                    if pred_class == 133:
+                        continue
+                    pred_mask = cur_masks[idx_cur] >= 0.5
+                    pred_score = cur_prob_masks[idx_cur][pred_mask].mean()
 
+                    isthing = pred_class < self.num_things_classes
                     if not isthing:
-                        # different stuff regions of same class will be
-                        # merged here, and stuff share the instance_id 0.
-                        panoptic_seg[mask] = panoptic_seg[mask] * 0 + pred_class
-                        # entityid_list.append(pred_class)
-                        # entity_score_list.append(score)
+                        panoptic_seg[pred_mask] = panoptic_seg[pred_mask] * 0 + pred_class
+                        eid = pred_class
                     else:
-                        panoptic_seg[mask] = panoptic_seg[mask] * 0 + (pred_class + instance_id * INSTANCE_OFFSET)
-                        # entityid_list.append(pred_class + instance_id * INSTANCE_OFFSET)
-                        # entity_score_list.append(score)
+                        panoptic_seg[pred_mask] = panoptic_seg[pred_mask] * 0 + (pred_class + instance_id * INSTANCE_OFFSET)
+                        eid = pred_class + instance_id * INSTANCE_OFFSET
                         instance_id += 1
-            
-            entityid_list = []
-            entity_score_list = []
-            for eid in torch.unique(panoptic_seg):
-                if eid == 133:
-                    continue
-                mask = panoptic_seg == eid
-                score = cur_mask_score[mask].mean()
-                entityid_list.append(eid)
-                entity_score_list.append(score)
+    
+                    entityid_list.append(eid)
+                    entity_score_list.append(pred_score)
+            elif mode == 'raw':
+                # cur_mask_ids = cur_prob_masks.argmax(0)
+                cur_mask_score, cur_mask_ids = cur_prob_masks.max(dim=0)
+                instance_id = 1
+                for k in range(cur_classes.shape[0]):
+                    # pred_class = int(cur_classes[k].item())
+                    pred_class = cur_classes[k].to(torch.long)
+                    isthing = pred_class < self.num_things_classes
+                    mask = cur_mask_ids == k
+                    mask_area = mask.sum().item()
+                    original_area = (cur_masks[k] >= 0.5).sum().item()
+
+                    score = cur_mask_score[mask].mean()
+
+                    if filter_low_score:
+                        mask = mask & (cur_masks[k] >= 0.5)
+                        # mask_area = mask.sum().item()
+
+                    if mask_area > 0 and original_area > 0:
+                        if mask_area / original_area < iou_thr:
+                            continue
+
+                        if not isthing:
+                            # different stuff regions of same class will be
+                            # merged here, and stuff share the instance_id 0.
+                            panoptic_seg[mask] = panoptic_seg[mask] * 0 + pred_class
+                            # entityid_list.append(pred_class)
+                            # entity_score_list.append(score)
+                        else:
+                            panoptic_seg[mask] = panoptic_seg[mask] * 0 + (pred_class + instance_id * INSTANCE_OFFSET)
+                            # entityid_list.append(pred_class + instance_id * INSTANCE_OFFSET)
+                            # entity_score_list.append(score)
+                            instance_id += 1
+                
+                entityid_list = []
+                entity_score_list = []
+                for eid in torch.unique(panoptic_seg):
+                    if eid == 133:
+                        continue
+                    mask = panoptic_seg == eid
+                    score = cur_mask_score[mask].mean()
+                    entityid_list.append(eid)
+                    entity_score_list.append(score)
 
         # print([eid.item() for eid in entityid_list])
         # return panoptic_seg
