@@ -167,39 +167,28 @@ class MaskFormerRelation(SingleStageDetector):
         else:
             return False
 
-    def _tensor_erode(self, bin_img, ksize=3):
-
-        B, C, H, W = bin_img.shape
-        pad = (ksize - 1) // 2
-        bin_img = F.pad(bin_img, [pad, pad, pad, pad], mode='constant', value=0)
-
-        patches = bin_img.unfold(dimension=2, size=ksize, step=1)
-        patches = patches.unfold(dimension=3, size=ksize, step=1)
-
-        eroded, _ = patches.reshape(B, C, H, W, -1).min(dim=-1)
-        return eroded
-
-    def _tensor_dilate(self, bin_img, ksize=3):
-        B, C, H, W = bin_img.shape
-        pad = (ksize - 1) // 2
-        bin_img = F.pad(bin_img, [pad, pad, pad, pad], mode='constant', value=0)
-
-        patches = bin_img.unfold(dimension=2, size=ksize, step=1)
-        patches = patches.unfold(dimension=3, size=ksize, step=1)
-
-        dilate, _ = patches.reshape(B, C, H, W, -1).max(dim=-1)
-        return dilate
-
     def _tensor_mask_shake(self, mask):
         '''
         mask [1, h, w]
         '''
+        mode = 'min' if np.random.rand() < 0.5 else 'max'
+        ksize = np.random.randint(3, 15)
+        if ksize % 2 == 0:
+            ksize += 1
+
+        bin_img = mask[None]
+        B, C, H, W = bin_img.shape
+        pad = (ksize - 1) // 2
+        bin_img = F.pad(bin_img, [pad, pad, pad, pad], mode='constant', value=0)
+
+        patches = bin_img.unfold(dimension=2, size=ksize, step=1)
+        patches = patches.unfold(dimension=3, size=ksize, step=1)
+
         if np.random.rand() < 0.5:
-            func = self._tensor_erode
+            res_mask, _ = patches.reshape(B, C, H, W, -1).min(dim=-1)
         else:
-            func = self._tensor_dilate
-        ksize = np.random.randint(15)
-        res_mask = func(mask[None], ksize)[0]
+            res_mask, _ = patches.reshape(B, C, H, W, -1).max(dim=-1)
+        res_mask = res_mask[0]
         return res_mask
 
 

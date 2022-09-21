@@ -29,7 +29,8 @@ model = dict(
         # entity_length=8,
         # entity_part_encoder='/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext',
         # entity_part_encoder_layers=6,
-        train_add_noise_mask=True,
+        # train_add_noise_mask=True,
+        mask_shake=True,
     ),
     panoptic_head=dict(
         in_channels=[96, 192, 384, 768]),
