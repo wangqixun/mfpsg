@@ -1,5 +1,6 @@
 from turtle import forward
 from mmdet.models.builder import HEADS, build_loss
+from mmdet.models.losses.eqlv2 import EQLv2
 from mmcv.runner import BaseModule, ModuleList, auto_fp16, force_fp32
 from mmcv.runner import load_checkpoint
 from mmcv.cnn.bricks.transformer import build_positional_encoding
@@ -79,6 +80,9 @@ class BertTransformer(BaseModule):
         self.register_buffer(
             'cum_samples',
             torch.zeros(self.num_cls, dtype=torch.float))
+
+        
+        # self.eqlv2_loss = EQLv2(num_classes=num_cls)
         
         
         
@@ -210,8 +214,10 @@ class BertTransformer(BaseModule):
             category_loss = tmp_loss * loss_weight
         
         focal_loss = sigmoid_focal_loss(input_tensor.T, target_tensor.T)
+
+        # eqlv2_loss = self.eqlv2_loss(input_tensor.T, target_tensor.T)
         
-        loss = category_loss + focal_loss
+        loss = category_loss + focal_loss # + eqlv2_loss
         
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
@@ -279,8 +285,8 @@ class MultiHeadCls(BaseModule):
         self.feature_size = feature_size
         self.input_feature_size = input_feature_size
         self.num_entity_max = num_entity_max
-        self.focal_loss = focal_loss(num_classes=num_classes)
 
+        # self.eqlv2_loss = EQLv2(num_classes=num_cls)
 
     def forward(self,inputs_embeds, attention_mask=None):
         encode_embedding = self.fc_input(inputs_embeds)
@@ -340,8 +346,9 @@ class MultiHeadCls(BaseModule):
         pred = pred.reshape([bs*nb_cls, -1])
         category_loss = self.multilabel_categorical_crossentropy(target, pred)
         focal_loss = sigmoid_focal_loss(input_tensor.T, target.T)
-        
-        loss = category_loss + focal_loss
+        # eqlv2_loss = self.eqlv2_loss(input_tensor.T, target_tensor.T)
+
+        loss = category_loss + focal_loss # + eqlv2_loss
         loss = loss.mean()
         losses["loss_focal"] = focal_loss
         losses["loss_category"] = category_loss

@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import sys
-sys.path.append("./")
+sys.path.append("/root/mfpsg")
 import argparse
 import copy
 import os

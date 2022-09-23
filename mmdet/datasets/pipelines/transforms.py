@@ -799,7 +799,7 @@ class RandomCrop:
                 updated according to crop size.
         """
         assert crop_size[0] > 0 and crop_size[1] > 0
-        for key in results.get('img_fields', ['img']):
+        for key in results.get('img_fields', ['img']):    # 对batch里面每一张图进行crop
             img = results[key]
             margin_h = max(img.shape[0] - crop_size[0], 0)
             margin_w = max(img.shape[1] - crop_size[1], 0)
@@ -814,17 +814,20 @@ class RandomCrop:
             results[key] = img
         results['img_shape'] = img_shape
 
-        # crop bboxes accordingly and clip to the image boundary
+        # crop bboxes accordingly and clip to the image boundary：修正bbox和label
         for key in results.get('bbox_fields', []):
             # e.g. gt_bboxes and gt_bboxes_ignore
             bbox_offset = np.array([offset_w, offset_h, offset_w, offset_h],
                                    dtype=np.float32)
             bboxes = results[key] - bbox_offset
-            if self.bbox_clip_border:
+            if self.bbox_clip_border:   # 调整之后，bbox不能出界
                 bboxes[:, 0::2] = np.clip(bboxes[:, 0::2], 0, img_shape[1])
                 bboxes[:, 1::2] = np.clip(bboxes[:, 1::2], 0, img_shape[0])
             valid_inds = (bboxes[:, 2] > bboxes[:, 0]) & (
-                bboxes[:, 3] > bboxes[:, 1])
+                bboxes[:, 3] > bboxes[:, 1])  # 跳过非法bbox
+            
+
+                
             # If the crop does not contain any gt-bbox area and
             # allow_negative_crop is False, skip this image.
             if (key == 'gt_bboxes' and not valid_inds.any()
@@ -845,9 +848,30 @@ class RandomCrop:
                 if self.recompute_bbox:
                     results[key] = results[mask_key].get_bboxes()
 
-        # crop semantic seg
+        # crop semantic seg：修正mask
         for key in results.get('seg_fields', []):
             results[key] = results[key][crop_y1:crop_y2, crop_x1:crop_x2]
+
+        
+        # 修正relation
+        drop_idx = []
+        for idx, mask_item in enumerate(results["masks"]):
+            mask_area = (results["gt_semantic_seg"] == mask_item["category"])
+            if np.sum(mask_area) == 0: # / results["gt_semantic_seg"].size < 0.0001:   # 占全图不到0.01%的直接丢弃（宽高不到1%）
+                drop_idx.append(idx)
+        
+        keep_rel_idx_list = []
+        for idx, rel in enumerate(results["gt_relationship"][0]):
+            if rel[0] in drop_idx or rel[1] in drop_idx:
+                continue
+            keep_rel_idx_list.append(idx)
+        keep_rel_idx_list = np.array(keep_rel_idx_list, dtype=np.int8)
+            # print(keep_rel_idx_list)
+        results["gt_relationship"][0] = results["gt_relationship"][0][keep_rel_idx_list]
+            # print(results["gt_relationship"][0])
+
+
+
 
         return results
 

@@ -153,7 +153,7 @@ model = dict(
                 type='CrossEntropyLossCost', weight=5.0, use_sigmoid=True),
             dice_cost=dict(
                 type='DiceCost', weight=5.0, pred_act=True, eps=1.0)),
-        sampler=dict(type='MaskPseudoSampler')),   # OHEMSampler
+        sampler=dict(type='MaskPseudoSampler')),   
     test_cfg=dict(
         panoptic_on=True,
         # For now, the dataset does not support
@@ -173,10 +173,10 @@ model = dict(
 dataset_type = 'CocoPanopticDataset'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-image_size = (1024//2, 1024//2)
+# image_size = (960, 540)  # 图像没必要太大，对于这个rel为主的任务来说
 train_pipeline = [
     dict(type='LoadImageFromFile', to_float32=True),
-    # dict(type='PhotoMetricDistortion'),
+    dict(type='PhotoMetricDistortion'),
     dict(
         type='LoadPanopticAnnotations',
         with_bbox=True,
@@ -186,24 +186,17 @@ train_pipeline = [
     ),
     dict(type='RandomFlip', flip_ratio=0.5),
     # large scale jittering
-    # dict(
-    #     type='Resize',
-    #     img_scale=image_size,
-    #     ratio_range=(0.1, 2.0),
-    #     multiscale_mode='range',
-    #     keep_ratio=True),
     dict(
         type='Resize',
-        # img_scale=[(1500, 400), (1500, 1400)],
         img_scale=[(960, 540), (640, 180)],
         multiscale_mode='range',
         keep_ratio=True),
-    # dict(
-    #     type='RandomCrop',
-    #     crop_size=image_size,
-    #     crop_type='absolute',
-    #     recompute_bbox=True,
-    #     allow_negative_crop=True),
+    #dict(
+       # type='RandomCrop',
+      #  crop_size=(960, 540),
+       # crop_type='absolute',
+       # recompute_bbox=True,
+      #  allow_negative_crop=True),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='Pad', size_divisor=32),
     dict(type='DefaultFormatBundle', img_to_float=True),
@@ -223,7 +216,7 @@ test_pipeline = [
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
-            dict(type='RandomFlip'),
+            # dict(type='RandomFlip'),
             dict(type='Normalize', **img_norm_cfg),
             dict(type='Pad', size_divisor=32),
             dict(type='ImageToTensor', keys=['img']),
@@ -232,8 +225,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=6,
-    workers_per_gpu=12,
+    samples_per_gpu=1,
+    workers_per_gpu=2,
     train=dict(
         type=dataset_type,
         ann_file='./data/psg_tra.json',
@@ -350,4 +343,4 @@ load_from = './checkpoints/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-
 
 # resume_from = "/root/autodl-tmp/output/swin-base-focal-loss-none-feature-merge/latest.pth"
 resume_from = None
-work_dir = '/root/autodl-tmp/output/swin-base-focal-loss-feature-merge-noise-mask/'
+work_dir = '/root/autodl-tmp/output/swin-base-focal-loss-feature-merge-photo-distor'

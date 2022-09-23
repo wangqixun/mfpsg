@@ -174,9 +174,9 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/root/mfpsg/configs/psg/v103.py',
-        ckp='/root/autodl-tmp/output/swin-base-focal-loss-feature-merge/latest.pth',
-        val_mode_output_dir='/root/autodl-tmp/output/swin-base-focal-loss-feature-merge/'
+        cfg='/root/mfpsg/configs/psg/v104.py',
+        ckp='/root/autodl-tmp/output/swin-base-focal-loss-feature-merge-data-aug/epoch_1.pth',
+        val_mode_output_dir='/root/autodl-tmp/output/swin-base-focal-loss-feature-merge-photo-distor/'
     )
 
     # landmark
