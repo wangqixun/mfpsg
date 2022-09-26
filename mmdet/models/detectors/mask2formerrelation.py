@@ -254,7 +254,7 @@ class MaskFormerRelation(SingleStageDetector):
         if self.use_background_feature:
             # background_mask = 1 - gt_mask
             # background_feature = feature[None] * background_mask[:, None]
-            # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
+            # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
             background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
             embedding_thing = embedding_thing + background_feature
 
@@ -718,7 +718,8 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
         else:
             entity_embedding = (feature_map * mask_tensor).sum(dim=[2, 3]) / (mask_tensor.sum(dim=[2, 3]) + 1e-8)
             entity_embedding = entity_embedding[None]
-            entity_embedding = entity_embedding + cls_entity_embedding
+            if self.embedding_add_cls:
+                entity_embedding = entity_embedding + cls_entity_embedding
             
             if self.add_postional_encoding:
                 pos_embed_zeros = feature_map[0].new_zeros((1, ) + feature_map[0].shape[-2:])
