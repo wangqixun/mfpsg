@@ -225,8 +225,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=2,
+    samples_per_gpu=8,
+    workers_per_gpu=16,
     train=dict(
         type=dataset_type,
         ann_file='./data/psg_tra.json',
@@ -343,4 +343,4 @@ load_from = './checkpoints/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-
 
 # resume_from = "/root/autodl-tmp/output/swin-base-focal-loss-none-feature-merge/latest.pth"
 resume_from = None
-work_dir = '/root/autodl-tmp/output/swin-base-focal-loss-feature-merge-photo-distor'
+work_dir = '/root/autodl-tmp/output/swin-base-56-class'

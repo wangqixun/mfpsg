@@ -8,7 +8,7 @@ from mmcv.cnn.bricks.transformer import build_positional_encoding
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from torchmetrics import Recall
 from transformers import AutoTokenizer, AutoModel, AutoConfig
 from transformers import BertModel, BertTokenizer
 
@@ -54,14 +54,10 @@ class BertTransformer(BaseModule):
             nn.Linear(input_feature_size, feature_size),
             nn.LayerNorm(feature_size),
         )
-        self.fc_output = nn.Sequential(
-            nn.Linear(feature_size, feature_size),
-            nn.LayerNorm(feature_size),
-        )
+        self.fc_output = nn.Linear(feature_size, num_cls + 1)
+        
         self.cache_dir = cache_dir
         self.model = AutoModel.from_pretrained(pretrained_transformers, cache_dir=cache_dir)
-        self.cls_q = nn.Linear(feature_size, cls_qk_size * num_cls)
-        self.cls_k = nn.Linear(feature_size, cls_qk_size * num_cls)
         self.model.encoder.layer = self.model.encoder.layer[:layers_transformers]
         self.model.embeddings.word_embeddings = None
         self.loss_weight = loss_weight
@@ -83,7 +79,8 @@ class BertTransformer(BaseModule):
 
         
         # self.eqlv2_loss = EQLv2(num_classes=num_cls)
-        
+        self.get_recall_N = Recall(average='macro', num_classes=num_cls + 1, top_k=20)
+        self.ce_loss = nn.CrossEntropyLoss()
         
         
     def forward(self,inputs_embeds, attention_mask=None):
@@ -94,11 +91,9 @@ class BertTransformer(BaseModule):
             encode_inputs_embeds = inputs_embeds
         encode_res = self.model(inputs_embeds=encode_inputs_embeds, attention_mask=attention_mask, position_ids=position_ids)
         encode_embedding = encode_res['last_hidden_state']
-        encode_embedding = self.fc_output(encode_embedding)
-        bs, N, c = encode_embedding.shape
-        q_embedding = self.cls_q(encode_embedding).reshape([bs, N, self.num_cls, self.cls_qk_size]).permute([0,2,1,3])
-        k_embedding = self.cls_k(encode_embedding).reshape([bs, N, self.num_cls, self.cls_qk_size]).permute([0,2,1,3])
-        cls_pred = q_embedding @ torch.transpose(k_embedding, 2, 3) / self.cls_qk_size ** 0.5
+        pooling_embedding = encode_embedding.mean(dim=1)
+        cls_pred = self.fc_output(pooling_embedding)
+
         return cls_pred
 
 
@@ -133,93 +128,21 @@ class BertTransformer(BaseModule):
         return res
 
 
-    def get_recall_N(self, y_pred, y_true, mask_attention, th=0, N=20):
-        # y_pred     [bs, 56, N, N]
-        # y_true     [bs, 56, N, N]
-        # mask_attention   [bs, 56, N, N]
+    
 
-        device = y_pred.device
-        dtype = y_pred.dtype
-        recall_list = []
-
-        for idx in range(len(y_true)):
-            sample_y_true = []
-            sample_y_pred = []
-            
-            # find topk
-            _, topk_indices = torch.topk(y_true[idx:idx+1].reshape([-1,]), k=N)
-            for index in topk_indices:
-                pred_cls = index // (y_true.shape[2] ** 2)
-                index_subject_object = index % (y_true.shape[2] ** 2)
-                pred_subject = index_subject_object // y_true.shape[2]
-                pred_object = index_subject_object % y_true.shape[2]
-                if y_true[idx, pred_cls, pred_subject, pred_object] == 0:
-                    continue
-                sample_y_true.append([pred_subject, pred_object, pred_cls])
-
-            # find topk
-            _, topk_indices = torch.topk(y_pred[idx:idx+1].reshape([-1,]), k=N)
-            for index in topk_indices:
-                pred_cls = index // (y_pred.shape[2] ** 2)
-                index_subject_object = index % (y_pred.shape[2] ** 2)
-                pred_subject = index_subject_object // y_pred.shape[2]
-                pred_object = index_subject_object % y_pred.shape[2]
-                sample_y_pred.append([pred_subject, pred_object, pred_cls])
-
-            recall = len([x for x in sample_y_pred if x in sample_y_true]) / (len(sample_y_true) + 1e-8)
-            recall_list.append(recall)
-
-        mean_recall = torch.tensor(recall_list).to(device).mean() * 100
-        return mean_recall
-
-
-    def loss(self, pred, target, mask_attention):
+    def loss(self, pred, target, mask_attention=None):
         # pred     [bs, 56, N, N]
         # target   [bs, 56, N, N]
         # mask_attention   [bs, N]
         losses = {}
-        bs, nb_cls, N, N = pred.shape
-        
-        mask = torch.zeros_like(pred).to(pred.device)
-        for idx in range(bs):
-            n = torch.sum(mask_attention[idx]).to(torch.int)
-            mask[idx, :, :n, :n] = 1
-        pred = pred * mask - 9999 * (1 - mask)
-        
-        
-        
-        input_tensor, target_tensor = None, None
-        if self.loss_mode == 'v1':
-            input_tensor = pred.reshape([bs*nb_cls, -1])
-            target_tensor = target.reshape([bs*nb_cls, -1])
-            category_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
-        elif self.loss_mode == 'v2':
-            input_tensor = pred.reshape([bs, -1])
-            target_tensor = target.reshape([bs, -1])
-            category_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
-        elif self.loss_mode == 'v3':
-            input_tensor = pred.permute([0, 2, 1, 3]).reshape([bs*N, -1])
-            target_tensor = target.permute([0, 2, 1, 3]).reshape([bs*N, -1])
-            category_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
-        elif self.loss_mode == 'v4':
-            assert pred.shape[0] == 1 and target.shape[0] == 1
-            input_tensor = pred.reshape([nb_cls, -1])
-            target_tensor = target.reshape([nb_cls, -1])
-            tmp_loss = self.multilabel_categorical_crossentropy(target_tensor, input_tensor)
-            # accumulate the samples for each category
-            for u_l in range(self.num_cls):
-                self.cum_samples[u_l] += target_tensor[u_l].sum()
-            loss_weight = self.cum_samples.clamp(min=1).sum() / self.cum_samples.clamp(min=1)
-            loss_weight = loss_weight.clamp(max=1000)
-            category_loss = tmp_loss * loss_weight
-        
-        focal_loss = sigmoid_focal_loss(input_tensor.T, target_tensor.T)
+        bs, nb_cls = pred.shape
+
+        loss = self.ce_loss(pred, target)
 
         # eqlv2_loss = self.eqlv2_loss(input_tensor.T, target_tensor.T)
         
-        loss = category_loss + focal_loss # + eqlv2_loss
+        # loss = category_loss # + focal_loss # + eqlv2_loss
         
-        loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
 
         # f1, p, r
@@ -232,7 +155,7 @@ class BertTransformer(BaseModule):
         # losses['rela.recall_mean'] = recall_mean
 
         # recall
-        recall = self.get_recall_N(pred, target, mask, N=20)
+        recall = self.get_recall_N(pred, target)
         losses['rela.recall@20'] = recall
 
         return losses

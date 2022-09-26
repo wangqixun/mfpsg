@@ -33,7 +33,8 @@ class MaskFormerRelation(SingleStageDetector):
                  relationship_head=None,
                  train_cfg=None,
                  test_cfg=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 bs_size=128):
         super(SingleStageDetector, self).__init__(init_cfg=init_cfg)
         self.backbone = build_backbone(backbone)
         if neck is not None:
@@ -84,6 +85,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         
         self.relu = nn.ReLU(inplace=True)
+        self.bs_size = bs_size
 
     @property
     def with_relationship(self):
@@ -171,7 +173,7 @@ class MaskFormerRelation(SingleStageDetector):
             background_feature = self._mask_pooling(feature, torch.ones_like(feature), output_size=self.entity_length)  # [output_size, 256]
             # embedding_thing = embedding_thing + background_feature
             # 一种新的背景融合方式
-            cls_feature_background = self.rela_cls_embed(56)  # [1, 256], 56代表背景
+            cls_feature_background = self.rela_cls_embed(torch.tensor([56]).to(device))  # [1, 256], 56代表背景
 
         # [output_size, 256]
         return embedding_thing, cls_feature_background
@@ -200,7 +202,7 @@ class MaskFormerRelation(SingleStageDetector):
             # 这里面featue是已经找出了这个类的featue吗？？？           
             background_feature = self._mask_pooling(feature, torch.ones_like(feature), output_size=self.entity_length)  # [output_size, 256]
             # embedding_staff = embedding_staff + background_feature
-            cls_feature_background = self.rela_cls_embed(56)  # [1, 256], 56代表背景
+            cls_feature_background = self.rela_cls_embed(torch.tensor([56]).to(device))  # [1, 256], 56代表背景
         
         # [output_size, 256]
         return embedding_staff, cls_feature_background
@@ -233,48 +235,47 @@ class MaskFormerRelation(SingleStageDetector):
         # gt_thing_label: 
 
         masks = meta_info['masks']
-        num_keep = min(self.num_entity_max, len(masks))
-        keep_idx_list = random.sample(list(range(len(masks))), num_keep)
-        old2new_dict = {old: new for new, old in enumerate(keep_idx_list)}
+        device = feature.device
 
         embedding_list = []
-        for idx, old in enumerate(keep_idx_list):
-            if self._id_is_thing(old, gt_thing_label):
-                embedding, cls_feature_background = self._thing_embedding(old, feature, gt_thing_mask, gt_thing_label, meta_info)
+        for idx in range(len(masks)):
+            if self._id_is_thing(idx, gt_thing_label):
+                embedding, cls_feature_background = self._thing_embedding(idx, feature, gt_thing_mask, gt_thing_label, meta_info)
             else:
-                embedding, cls_feature_background = self._staff_embedding(old, feature, masks, gt_semantic_seg)
+                embedding, cls_feature_background = self._staff_embedding(idx, feature, masks, gt_semantic_seg)
             embedding_list.append(embedding)
         
+        # idx2label映射关系建立
+        idx2label = dict()
+        for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
+            idx2label[(ii, jj)] = cls_relationship
+
         # 改结构，就要改输入
         combine_embedding = []
-        for idx_i in range(embedding_list.shape[1]):
-            for idx_j in range(embedding_list.shape[1]):
+        target_relationship = []
+        for idx_i in range(len(embedding_list)):
+            for idx_j in range(len(embedding_list)):
                 if idx_i == idx_j:
                     continue
-
                 
+                if (idx_i, idx_j) in idx2label:
+                    target_relationship.append(idx2label[(idx_i, idx_j)])
+                else:
+                    target_relationship.append(56)
 
-                comb1 = torch.cat([embedding_list[idx_i], embedding_list[idx_j], cls_feature_background], dim=1)
-                comb2 = torch.cat([embedding_list[idx_j], embedding_list[idx_i], cls_feature_background], dim=1)
+
+                comb = torch.stack([embedding_list[idx_i], embedding_list[idx_j], cls_feature_background], dim=1)
                 if self.entity_length > 1:
-                    comb1 = self._entity_encode(comb1)
-                    comb2 = self._entity_encode(comb2)
-                combine_embedding.append(comb1)
-                combine_embedding.append(comb2)
+                    comb2 = self._entity_encode(comb)
+                combine_embedding.append(comb)
 
-
-        
-
-        target_relationship = feature.new_zeros([len(combine_embedding), self.relationship_head.num_cls])
-        for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
-            if not (ii in old2new_dict and jj in old2new_dict):
-                continue
-            new_ii, new_jj = old2new_dict[ii], old2new_dict[jj]
-            target_relationship[0][cls_relationship][new_ii][new_jj] = 1
 
         # embedding [1, n, 256]
-        # target_relationship [1, 56, n, n]
-        return embedding, target_relationship, cls_feature_background
+        # target_relationship [x, 57]
+        target_relationship = torch.tensor(target_relationship, dtype=torch.long).to(device)
+        combine_embedding = torch.cat(combine_embedding, dim=0)
+
+        return combine_embedding, target_relationship
 
 
 
@@ -333,7 +334,7 @@ class MaskFormerRelation(SingleStageDetector):
             num_imgs = len(img_metas)
             
             for idx in range(num_imgs):
-                embedding, target_relationship, cls_feature_background = self._get_entity_embedding_and_target(
+                embedding, target_relationship = self._get_entity_embedding_and_target(
                     mask_features[idx],
                     img_metas[idx],
                     gt_masks[idx],
@@ -342,26 +343,16 @@ class MaskFormerRelation(SingleStageDetector):
                 )
                 relationship_input_embedding.append(embedding)
                 relationship_target.append(target_relationship)
-                bg_feature_list.append(cls_feature_background)
-
-            max_length = max([e.shape[1] for e in relationship_input_embedding])
-            mask_attention = mask_features.new_zeros([num_imgs, max_length])
-            for idx in range(num_imgs):
-                mask_attention[idx, :relationship_input_embedding[idx].shape[1]] = 1.
-            relationship_input_embedding = [
-                F.pad(e, [0, 0, 0, max_length-e.shape[1]])
-                for e in relationship_input_embedding
-            ]
-            relationship_target = [
-                F.pad(t, [0, max_length-t.shape[3], 0, max_length-t.shape[2]])
-                for t in relationship_target
-            ]
-            relationship_input_embedding = torch.cat(relationship_input_embedding, dim=0)
-            relationship_target = torch.cat(relationship_target, dim=0)
 
             
-            relationship_output = self.relationship_head(relationship_input_embedding, mask_attention)
-            loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
+
+            relationship_input_embedding = torch.cat(relationship_input_embedding, dim=0)
+            rand_idx = torch.randint(relationship_input_embedding.shape[0], (self.bs_size,))
+            relationship_input_embedding = relationship_input_embedding[rand_idx]
+            relationship_target = torch.cat(relationship_target, dim=0)[rand_idx]
+
+            relationship_output = self.relationship_head(relationship_input_embedding)
+            loss_relationship = self.relationship_head.loss(relationship_output, relationship_target)
             losses.update(loss_relationship)
 
 
