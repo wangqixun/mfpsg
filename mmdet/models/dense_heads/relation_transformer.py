@@ -54,10 +54,17 @@ class BertTransformer(BaseModule):
         super().__init__()
         self.num_cls = num_cls
         self.cls_qk_size = cls_qk_size
-        self.fc_input = nn.Sequential(
-            nn.Linear(input_feature_size, feature_size),
-            nn.LayerNorm(feature_size),
-        )
+        if self.cls_embedding_mode == 'add':
+            self.fc_input = nn.Sequential(
+                nn.Linear(input_feature_size, feature_size),
+                nn.LayerNorm(feature_size),
+            )
+        elif self.cls_embedding_mode == 'cat':
+            self.fc_input = nn.Sequential(
+                nn.Linear(input_feature_size * 2, feature_size),
+                nn.LayerNorm(feature_size),
+            )
+
         self.fc_output = nn.Sequential(
             nn.Linear(feature_size, feature_size),
             nn.LayerNorm(feature_size),

@@ -725,9 +725,12 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
         else:
             entity_embedding = (feature_map * mask_tensor).sum(dim=[2, 3]) / (mask_tensor.sum(dim=[2, 3]) + 1e-8)
             entity_embedding = entity_embedding[None]
-            if self.embedding_add_cls:
+            if self.cls_embedding_mode == 'cat':
+                entity_embedding = torch.cat([entity_embedding, cls_entity_embedding], dim=-1)
+            elif self.cls_embedding_mode == 'add':
                 entity_embedding = entity_embedding + cls_entity_embedding
-            
+
+
             if self.add_postional_encoding:
                 pos_embed_zeros = feature_map[0].new_zeros((1, ) + feature_map[0].shape[-2:])
                 pos_embed = self.relationship_head.postional_encoding_layer(pos_embed_zeros)
