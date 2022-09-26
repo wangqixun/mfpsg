@@ -42,7 +42,7 @@ from .yolo_head import YOLOV3Head
 from .yolof_head import YOLOFHead
 from .yolox_head import YOLOXHead
 from .mask2formerrelation_head import Mask2FormerRelationHead
-from .relation_transformer import BertTransformer, MultiHeadCls
+from .relation_transformer import BertTransformer
 
 __all__ = [
     'AnchorFreeHead', 'AnchorHead', 'GuidedAnchorHead', 'FeatureAdaption',
@@ -58,5 +58,5 @@ __all__ = [
     'DecoupledSOLOLightHead', 'LADHead', 'TOODHead', 'MaskFormerHead',
     'Mask2FormerHead', 'SOLOV2Head', 'DDODHead',
     'Mask2FormerRelationHead',
-    'BertTransformer', 'MultiHeadCls'
+    'BertTransformer',
 ]

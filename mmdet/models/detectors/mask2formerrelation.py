@@ -61,13 +61,14 @@ class MaskFormerRelation(SingleStageDetector):
         
         if relationship_head is not None:
             self.relationship_head = build_head(relationship_head)
-            self.rela_cls_embed = nn.Embedding(self.relationship_head.num_classes, self.relationship_head.input_feature_size)
+            self.rela_cls_embed = nn.Embedding(self.relationship_head.num_classes + 1, self.relationship_head.input_feature_size)
             self.num_entity_max = self.relationship_head.num_entity_max
             self.use_background_feature = self.relationship_head.use_background_feature
             
             self.entity_length = self.relationship_head.entity_length
             self.entity_part_encoder = self.relationship_head.entity_part_encoder
             self.entity_part_encoder_layers = self.relationship_head.entity_part_encoder_layers
+            print("entity length = {}".format(self.entity_length))
             if self.entity_length > 1:
                 self.entity_model = AutoModel.from_pretrained(self.entity_part_encoder, cache_dir=self.relationship_head.cache_dir)
                 self.entity_model.encoder.layer = self.entity_model.encoder.layer[:self.entity_part_encoder_layers]
@@ -165,14 +166,15 @@ class MaskFormerRelation(SingleStageDetector):
         if self.use_background_feature:
             # background_mask = 1 - gt_mask
             # background_feature = feature[None] * background_mask[:, None]
-            # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)                 
-            background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
+            # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)      
+            # 这里面featue是已经找出了这个类的featue吗？？？           
+            background_feature = self._mask_pooling(feature, torch.ones_like(feature), output_size=self.entity_length)  # [output_size, 256]
             # embedding_thing = embedding_thing + background_feature
             # 一种新的背景融合方式
-            embedding_thing = self.relu(embedding_thing + background_feature) - (embedding_thing - background_feature)**2
+            cls_feature_background = self.rela_cls_embed(56)  # [1, 256], 56代表背景
 
         # [output_size, 256]
-        return embedding_thing
+        return embedding_thing, cls_feature_background
 
     def _staff_embedding(self, idx, feature, masks, gt_semantic_seg):
         device = feature.device
@@ -195,12 +197,13 @@ class MaskFormerRelation(SingleStageDetector):
             # background_mask = 1 - mask_staff
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
-            background_feature = self._mask_pooling(feature, 1 - mask_staff, output_size=self.entity_length)  # [output_size, 256]
+            # 这里面featue是已经找出了这个类的featue吗？？？           
+            background_feature = self._mask_pooling(feature, torch.ones_like(feature), output_size=self.entity_length)  # [output_size, 256]
             # embedding_staff = embedding_staff + background_feature
-            embedding_staff = self.relu(embedding_staff + background_feature) - (embedding_staff - background_feature)**2
+            cls_feature_background = self.rela_cls_embed(56)  # [1, 256], 56代表背景
         
         # [output_size, 256]
-        return embedding_staff
+        return embedding_staff, cls_feature_background
 
     def _entity_encode(self, inputs_embeds):
         '''
@@ -237,17 +240,32 @@ class MaskFormerRelation(SingleStageDetector):
         embedding_list = []
         for idx, old in enumerate(keep_idx_list):
             if self._id_is_thing(old, gt_thing_label):
-                embedding = self._thing_embedding(old, feature, gt_thing_mask, gt_thing_label, meta_info)
+                embedding, cls_feature_background = self._thing_embedding(old, feature, gt_thing_mask, gt_thing_label, meta_info)
             else:
-                embedding = self._staff_embedding(old, feature, masks, gt_semantic_seg)
-            embedding_list.append(embedding[None])
-        # [1, n * self.entity_length, 256]
-        embedding = torch.cat(embedding_list, dim=1)
+                embedding, cls_feature_background = self._staff_embedding(old, feature, masks, gt_semantic_seg)
+            embedding_list.append(embedding)
+        
+        # 改结构，就要改输入
+        combine_embedding = []
+        for idx_i in range(embedding_list.shape[1]):
+            for idx_j in range(embedding_list.shape[1]):
+                if idx_i == idx_j:
+                    continue
 
-        if self.entity_length > 1:
-            embedding = self._entity_encode(embedding)
+                
 
-        target_relationship = feature.new_zeros([1, self.relationship_head.num_cls, embedding.shape[1], embedding.shape[1]])
+                comb1 = torch.cat([embedding_list[idx_i], embedding_list[idx_j], cls_feature_background], dim=1)
+                comb2 = torch.cat([embedding_list[idx_j], embedding_list[idx_i], cls_feature_background], dim=1)
+                if self.entity_length > 1:
+                    comb1 = self._entity_encode(comb1)
+                    comb2 = self._entity_encode(comb2)
+                combine_embedding.append(comb1)
+                combine_embedding.append(comb2)
+
+
+        
+
+        target_relationship = feature.new_zeros([len(combine_embedding), self.relationship_head.num_cls])
         for ii, jj, cls_relationship in meta_info['gt_relationship'][0]:
             if not (ii in old2new_dict and jj in old2new_dict):
                 continue
@@ -256,7 +274,7 @@ class MaskFormerRelation(SingleStageDetector):
 
         # embedding [1, n, 256]
         # target_relationship [1, 56, n, n]
-        return embedding, target_relationship
+        return embedding, target_relationship, cls_feature_background
 
 
 
@@ -310,11 +328,12 @@ class MaskFormerRelation(SingleStageDetector):
 
             relationship_input_embedding = []
             relationship_target = []
+            bg_feature_list = []
 
             num_imgs = len(img_metas)
-
+            
             for idx in range(num_imgs):
-                embedding, target_relationship = self._get_entity_embedding_and_target(
+                embedding, target_relationship, cls_feature_background = self._get_entity_embedding_and_target(
                     mask_features[idx],
                     img_metas[idx],
                     gt_masks[idx],
@@ -323,6 +342,7 @@ class MaskFormerRelation(SingleStageDetector):
                 )
                 relationship_input_embedding.append(embedding)
                 relationship_target.append(target_relationship)
+                bg_feature_list.append(cls_feature_background)
 
             max_length = max([e.shape[1] for e in relationship_input_embedding])
             mask_attention = mask_features.new_zeros([num_imgs, max_length])
@@ -338,6 +358,8 @@ class MaskFormerRelation(SingleStageDetector):
             ]
             relationship_input_embedding = torch.cat(relationship_input_embedding, dim=0)
             relationship_target = torch.cat(relationship_target, dim=0)
+
+            
             relationship_output = self.relationship_head(relationship_input_embedding, mask_attention)
             loss_relationship = self.relationship_head.loss(relationship_output, relationship_target, mask_attention)
             losses.update(loss_relationship)
