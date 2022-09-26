@@ -41,6 +41,7 @@ class BertTransformer(BaseModule):
         train_add_noise_mask=False,
         embedding_add_cls=True,
         mask_shake=False,
+        cls_embedding_mode='add',
     ):
         '''
             loss_mode = 'v1'
@@ -84,6 +85,7 @@ class BertTransformer(BaseModule):
         self.train_add_noise_mask = train_add_noise_mask
         self.embedding_add_cls = embedding_add_cls
         self.mask_shake = mask_shake
+        self.cls_embedding_mode = cls_embedding_mode
         self.register_buffer(
             'cum_samples',
             torch.zeros(self.num_cls, dtype=torch.float))
