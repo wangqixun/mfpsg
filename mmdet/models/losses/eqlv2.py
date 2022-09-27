@@ -52,14 +52,22 @@ class EQLv2(nn.Module):
 
     def forward(self,
                 cls_score,
-                target,
+                label,
                 weight=None,
                 avg_factor=None,
                 reduction_override=None,
                 **kwargs):
         self.n_i, self.n_c = cls_score.size()
+
+        self.gt_classes = label
         self.pred_class_logits = cls_score
 
+        def expand_label(pred, gt_classes):
+            target = pred.new_zeros(self.n_i, self.n_c)
+            target[torch.arange(self.n_i), gt_classes] = 1
+            return target
+
+        target = expand_label(cls_score, label)
 
         pos_w, neg_w = self.get_weight(cls_score)
 

@@ -78,7 +78,7 @@ class BertTransformer(BaseModule):
             torch.zeros(self.num_cls, dtype=torch.float))
 
         
-        # self.eqlv2_loss = EQLv2(num_classes=num_cls)
+        self.eqlv2_loss = EQLv2(num_classes=num_cls+1)
         self.get_recall_N = Recall(average='macro', num_classes=num_cls + 1, top_k=20)
         self.ce_loss = nn.CrossEntropyLoss()
         
@@ -131,15 +131,15 @@ class BertTransformer(BaseModule):
     
 
     def loss(self, pred, target, mask_attention=None):
-        # pred     [bs, 56, N, N]
-        # target   [bs, 56, N, N]
+        # pred     [bs, 56]
+        # target   [bs, 56]
         # mask_attention   [bs, N]
         losses = {}
         bs, nb_cls = pred.shape
 
-        loss = self.ce_loss(pred, target)
+        # loss = self.ce_loss(pred, target)
 
-        # eqlv2_loss = self.eqlv2_loss(input_tensor.T, target_tensor.T)
+        loss = self.eqlv2_loss(pred, target)
         
         # loss = category_loss # + focal_loss # + eqlv2_loss
         

@@ -577,8 +577,10 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
 
         # feature_map [bs, 256, h, w]
         # mask_tensor [n, 1, h, w]
+        combine_embedding = []
+        pred_idx2mask_idx = dict()
         if self.entity_length > 1:
-            entity_embedding_list = []
+            embedding_list = []
             for idx in range(len(mask_list)):
                 # embedding [self.entity_length, 256]
                 embedding = self._mask_pooling(feature_map[0], mask_tensor[idx], self.entity_length)
@@ -586,30 +588,48 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                 if self.use_background_feature:
                     background_embedding = self._mask_pooling(feature_map[0], 1 - mask_tensor[idx], self.entity_length)
                     # embedding = embedding + background_embedding
-                    embedding = self.relu(embedding + background_feature) - (embedding - background_feature)**2
+                    cls_feature_background = self.rela_cls_embed(torch.tensor([56]).to(device))  # [1, 256], 56代表背景
 
-                entity_embedding_list.append(embedding[None])
+                embedding_list.append(embedding)
 
-            # embedding [1, n*self.entity_length, 256]
-            embedding = torch.cat(entity_embedding_list, dim=1)
+            # 改结构，就要改输入
+            
+            for idx_i in range(len(embedding_list)):
+                for idx_j in range(len(embedding_list)):
+                    if idx_i == idx_j:
+                        continue
+                    
+                    
+                    comb = torch.stack([embedding_list[idx_i], embedding_list[idx_j], cls_feature_background], dim=1)
+                    if self.entity_length > 1:
+                        comb2 = self._entity_encode(comb)
+                    pred_idx2mask_idx[len(combine_embedding)] = (idx_i, idx_j)
+                    combine_embedding.append(comb)
             # entity_embedding [1, n, 256]
-            entity_embedding = self._entity_encode(embedding)
-
         else:
             entity_embedding = (feature_map * mask_tensor).sum(dim=[2, 3]) / (mask_tensor.sum(dim=[2, 3]) + 1e-8)
-            entity_embedding = entity_embedding[None]
-            entity_embedding = entity_embedding + cls_entity_embedding
-            
-            if self.use_background_feature:
-                background_mask = 1 - mask_tensor
-                background_feature = (feature_map * background_mask).sum(dim=[2, 3]) / (background_mask.sum(dim=[2, 3]) + 1e-8)
-                background_feature = background_feature[None]
-                # entity_embedding [1, n, 256]
-                # entity_embedding = entity_embedding + background_feature
-                entity_embedding = self.relu(entity_embedding + background_feature) - (entity_embedding - background_feature)**2
+            embedding_list = entity_embedding + cls_entity_embedding
+            embedding_list = embedding_list[0]
 
-        # entity_embedding [1, n, 256]
-        return entity_embedding, entity_id_list, entity_score_list
+            if self.use_background_feature:
+                # entity_embedding = entity_embedding + background_feature
+                cls_feature_background = self.rela_cls_embed(torch.tensor([56]).to(device))  # [1, 256], 56代表背景
+            for idx_i in range(len(embedding_list)):
+                for idx_j in range(len(embedding_list)):
+                    if idx_i == idx_j:
+                        continue
+
+                    comb = torch.stack([embedding_list[idx_i].unsqueeze(0), embedding_list[idx_j].unsqueeze(0), cls_feature_background], dim=1)
+                    pred_idx2mask_idx[len(combine_embedding)] = (idx_i, idx_j)
+                    combine_embedding.append(comb)
+
+        if len(combine_embedding) == 0:
+            print("cannot get feature for rel predict, metainfo: {}".format(meta))
+            return None
+
+        combine_embedding = torch.cat(combine_embedding, dim=0)
+
+        return combine_embedding, entity_id_list, entity_score_list, pred_idx2mask_idx
 
 
     def simple_test(self, imgs, img_metas, **kwargs):
@@ -657,18 +677,10 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
         
         relation_res = []
         if entity_res is not None:
-            entity_embedding, entityid_list, entity_score_list = entity_res
+            entity_embedding, entityid_list, entity_score_list, pred_idx2mask_idx = entity_res
             relationship_output = self.relationship_head(entity_embedding, attention_mask=None)
-            relationship_output = relationship_output[0]
-            for idx_i in range(relationship_output.shape[1]):
-                relationship_output[:, idx_i, idx_i] = -9999
-            relationship_output = torch.exp(relationship_output)
-            # relationship_output = torch.sigmoid(relationship_output)
+            relationship_output = torch.nn.functional.softmax(relationship_output, dim=1)
 
-            # relationship_output x subject score x object score
-            entity_score_tensor = torch.tensor(entity_score_list, device=device, dtype=dtype)
-            relationship_output = relationship_output * entity_score_tensor[None, :, None]
-            relationship_output = relationship_output * entity_score_tensor[None, None, :]
             """
             # relationship weight
             for ratio_th, weight in [
@@ -690,16 +702,22 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
 
             # find topk
-            _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=20)
+            label_pred = torch.argmax(relationship_output, dim=1)
 
             # subject, object, cls
-            for index in topk_indices:
-                pred_cls = index // (relationship_output.shape[1] ** 2)
-                index_subject_object = index % (relationship_output.shape[1] ** 2)
-                pred_subject = index_subject_object // relationship_output.shape[1]
-                pred_object = index_subject_object % relationship_output.shape[1]
-                pred = [pred_subject.item(), pred_object.item(), pred_cls.item()]
+            for idx in range(len(relationship_output)):
+                tag = label_pred[idx].item()
+                confid = relationship_output[idx][tag].item()
+                if tag == 56:
+                    continue
+                
+                pred_subj, pred_obj = pred_idx2mask_idx[idx]
+                
+                pred = [pred_subj, pred_obj, tag, confid]
                 relation_res.append(pred)
+            
+            relation_res = sorted(relation_res, key=lambda x:x[-1], reverse=True)[:20]
+            relation_res = [i[:3] for i in relation_res]
             
         rl = dict(
             entityid_list=[eid.item() for eid in entityid_list],

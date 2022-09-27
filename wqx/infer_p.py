@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import os
 import random
+random.seed(42)
 from panopticapi.utils import rgb2id, id2rgb
 import mmcv
 from tqdm import tqdm
@@ -108,6 +109,7 @@ def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
             continue
 
         img_file = os.path.join(img_dir, d['file_name'])
+        
         img = cv2.imread(img_file)
         img_res = inference_detector(model, img)
 
@@ -174,9 +176,9 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/root/mfpsg/configs/psg/v104.py',
-        ckp='/root/autodl-tmp/output/swin-base-focal-loss-feature-merge/epoch_1.pth',
-        val_mode_output_dir='/root/autodl-tmp/output/swin-base-focal-loss-feature-merge/'
+        cfg='/root/mfpsg/configs/psg/v106.py',
+        ckp='/root/autodl-tmp/output/swin-base-56-class/epoch_1.pth',
+        val_mode_output_dir='/root/autodl-tmp/output/swin-base-56-class/'
     )
 
     # landmark
