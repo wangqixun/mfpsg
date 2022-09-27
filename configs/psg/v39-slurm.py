@@ -126,7 +126,7 @@ model = dict(
         pretrained_transformers='/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext', 
         cache_dir='/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/tmp',
         input_feature_size=256,
-        layers_transformers=6,
+        layers_transformers=1,
         feature_size=768,
         num_classes=num_classes,
         num_cls=num_relation,
@@ -154,13 +154,7 @@ model = dict(
                 type='CrossEntropyLossCost', weight=5.0, use_sigmoid=True),
             dice_cost=dict(
                 type='DiceCost', weight=5.0, pred_act=True, eps=1.0)),
-        sampler=dict(type='MaskPseudoSampler'),
-        freeze_layers = [
-            'backbone',
-            'panoptic_head',
-            'panoptic_fusion_head',
-        ]
-    ),
+        sampler=dict(type='MaskPseudoSampler')),
     test_cfg=dict(
         panoptic_on=True,
         # For now, the dataset does not support
@@ -226,8 +220,8 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        # img_scale=(1333, 800),
-        img_scale=(1500, 1500),
+        img_scale=(1333, 800),
+        # img_scale=(1500, 1500),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -357,4 +351,4 @@ mp_start_method = 'fork'
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 # resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v25/latest.pth'
 resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v33'
+work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v39'

@@ -22,23 +22,21 @@ def load_json(json_file):
     return data
 
 
-def get_model(cfg, ckp):
+def get_model(cfg, ckp, transformers_model):
     cfg = mmcv.Config.fromfile(cfg)
 
     cfg['model']['type'] = 'Mask2FormerRelationForinfer'
 
-    cfg['model']['relationship_head']['pretrained_transformers'] = '/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext'
+    cfg['model']['relationship_head']['pretrained_transformers'] = transformers_model
     cfg['model']['relationship_head']['cache_dir'] = './'    
     if 'entity_length' in cfg['model']['relationship_head'] and cfg['model']['relationship_head']['entity_length'] > 1:
-        cfg['model']['relationship_head']['entity_part_encoder'] = '/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext'
+        cfg['model']['relationship_head']['entity_part_encoder'] = transformers_model
 
     model = init_detector(cfg, ckp)
     return model
 
 
-def get_tra_val_test_list():
-    psg_tra_data_file = '/share/data/psg/dataset/for_participants/psg_train_val.json'
-    psg_val_data_file = '/share/data/psg/dataset/for_participants/psg_val_test.json'
+def get_tra_val_test_list(psg_tra_data_file, psg_val_data_file):
     psg_tra_data = load_json(psg_tra_data_file)
     psg_val_data = load_json(psg_val_data_file)
 
@@ -61,35 +59,32 @@ def get_tra_val_test_list():
     print('tra', len(tra_id_list))
     print('val', len(val_id_list))
     print('test', len(test_id_list))
-
-    # np.save('/share/wangqixun/workspace/bs/psg/psg/wqx/tra_id_list.npy', tra_id_list)
-    # np.save('/share/wangqixun/workspace/bs/psg/psg/wqx/val_id_list.npy', val_id_list)
-    # np.save('/share/wangqixun/workspace/bs/psg/psg/wqx/test_id_list.npy', test_id_list)
     
     return tra_id_list, val_id_list, test_id_list
 
 
-def get_val_p(mode, cfg, ckp, val_mode_output_dir=None):
-    jpg_output_dir = f'/share/wangqixun/workspace/bs/psg/mfpsg/submit/{mode}/submission/panseg'
-    json_output_dir = f'/share/wangqixun/workspace/bs/psg/mfpsg/submit/{mode}/submission'
+def get_val_p(mode, cfg, ckp, psg_tra_data_file, psg_val_data_file, img_dir, val_mode_output_dir, test_mode_output_dir, transformers_model):
 
-    if mode=='val':
+
+    if mode == 'val':
         jpg_output_dir = os.path.join(val_mode_output_dir, 'submission/panseg')
         json_output_dir = os.path.join(val_mode_output_dir, 'submission')
-        # jpg_output_dir = '/share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission/panseg'
-        # json_output_dir = '/share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission'
+    else:
+        jpg_output_dir = os.path.join(test_mode_output_dir, mode,'submission/panseg')
+        jpg_output_dir = os.path.join(test_mode_output_dir, mode,'submission')
 
     os.makedirs(jpg_output_dir, exist_ok=True)
 
     INSTANCE_OFFSET = 1000
 
 
-    tra_id_list, val_id_list, test_id_list = get_tra_val_test_list()
-    psg_val_data_file = '/share/data/psg/dataset/for_participants/psg_val_test.json'
+    tra_id_list, val_id_list, test_id_list = get_tra_val_test_list(
+        psg_tra_data_file=psg_tra_data_file,
+        psg_val_data_file=psg_val_data_file,
+    )
     psg_val_data = load_json(psg_val_data_file)
 
-    img_dir = '/share/data/psg/dataset'
-    model = get_model(cfg, ckp)
+    model = get_model(cfg, ckp, transformers_model=transformers_model)
 
     cur_nb = -1
     nb_vis = None
@@ -172,9 +167,15 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v34-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v34/epoch_12.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v34'
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v36-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v36/epoch_12.pth',
+        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v36_latest',
+        test_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit',
+
+        psg_tra_data_file='/share/data/psg/dataset/for_participants/psg_train_val.json',
+        psg_val_data_file='/share/data/psg/dataset/for_participants/psg_val_test.json',
+        img_dir='/share/data/psg/dataset',
+        transformers_model='/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext',
     )
 
     # landmark

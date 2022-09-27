@@ -803,7 +803,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             relationship_output = torch.exp(relationship_output)
             # relationship_output = torch.sigmoid(relationship_output)
 
-            # relationship_output x subject score x object score
+            # relationship_output * subject score * object score
             entity_score_tensor = torch.tensor(entity_score_list, device=device, dtype=dtype)
             relationship_output = relationship_output * entity_score_tensor[None, :, None]
             relationship_output = relationship_output * entity_score_tensor[None, None, :]
@@ -823,16 +823,17 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
 
             # find topk
-            _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=20)
+            if relationship_output.shape[1] > 1:
+                _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=20)
 
-            # subject, object, cls
-            for index in topk_indices:
-                pred_cls = index // (relationship_output.shape[1] ** 2)
-                index_subject_object = index % (relationship_output.shape[1] ** 2)
-                pred_subject = index_subject_object // relationship_output.shape[1]
-                pred_object = index_subject_object % relationship_output.shape[1]
-                pred = [pred_subject.item(), pred_object.item(), pred_cls.item()]
-                relation_res.append(pred)
+                # subject, object, cls
+                for index in topk_indices:
+                    pred_cls = index // (relationship_output.shape[1] ** 2)
+                    index_subject_object = index % (relationship_output.shape[1] ** 2)
+                    pred_subject = index_subject_object // relationship_output.shape[1]
+                    pred_object = index_subject_object % relationship_output.shape[1]
+                    pred = [pred_subject.item(), pred_object.item(), pred_cls.item()]
+                    relation_res.append(pred)
             
         rl = dict(
             entityid_list=[eid.item() for eid in entityid_list],
