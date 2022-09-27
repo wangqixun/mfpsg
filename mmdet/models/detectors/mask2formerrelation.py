@@ -34,7 +34,7 @@ class MaskFormerRelation(SingleStageDetector):
                  train_cfg=None,
                  test_cfg=None,
                  init_cfg=None,
-                 bs_size=128):
+                 bs_size=64):
         super(SingleStageDetector, self).__init__(init_cfg=init_cfg)
         self.backbone = build_backbone(backbone)
         if neck is not None:

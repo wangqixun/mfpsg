@@ -9,4 +9,5 @@ python -m torch.distributed.launch \
   tools/train.py \
   $CONFIG \
   --gpus 4 \
-  --launcher pytorch
+  --launcher pytorch \
+  --seed 42
