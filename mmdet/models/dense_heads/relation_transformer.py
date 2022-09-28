@@ -1,6 +1,6 @@
 from turtle import forward
 from mmdet.models.builder import HEADS, build_loss
-from mmdet.models.losses.eqlv2 import EQLv2
+from mmdet.models.losses.seesaw_loss import SeesawLoss
 from mmcv.runner import BaseModule, ModuleList, auto_fp16, force_fp32
 from mmcv.runner import load_checkpoint
 from mmcv.cnn.bricks.transformer import build_positional_encoding
@@ -78,7 +78,7 @@ class BertTransformer(BaseModule):
             torch.zeros(self.num_cls, dtype=torch.float))
 
         
-        self.eqlv2_loss = EQLv2(num_classes=num_cls+1)
+        self.eqlv2_loss = SeesawLoss(num_classes=num_cls)
         self.get_recall_N = Recall(average='macro', num_classes=num_cls + 1, top_k=20)
         self.ce_loss = nn.CrossEntropyLoss()
         
