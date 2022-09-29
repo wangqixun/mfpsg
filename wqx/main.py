@@ -304,7 +304,7 @@ def f3(psg_data, id_list, output_instance_json, coco_json_file):
 
     
 
-def f1(raw_psg_data, coco80_instance_val2017_json, output_tra_json, output_val_json, output_val_instance_json, ):
+def f1(raw_psg_data, raw_psg_valtest_data, coco80_instance_val2017_json, output_tra_json, output_val_json, output_val_instance_json, ):
     # output_tra_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_tra.json'
     # output_val_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
     # output_tra_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_tra.json'
@@ -314,7 +314,10 @@ def f1(raw_psg_data, coco80_instance_val2017_json, output_tra_json, output_val_j
     # coco80_instance_train2017_json = '/share/data/coco/annotations/instances_train2017_coco80.json'
     # coco80_instance_val2017_json = '/share/data/coco/annotations/instances_val2017_coco80.json'
 
-    tra_id_list, val_id_list, test_id_list = get_tra_val_test_list()
+    tra_id_list, val_id_list, test_id_list = get_tra_val_test_list(
+        psg_tra_data_file=raw_psg_data, 
+        psg_val_data_file=raw_psg_valtest_data,
+    )
 
     psg_data = load_json(raw_psg_data)
 
@@ -338,7 +341,8 @@ def f1(raw_psg_data, coco80_instance_val2017_json, output_tra_json, output_val_j
 
 if __name__ == '__main__':
     # raw data file
-    raw_psg_data='/share/data/psg/dataset/for_participants/psg_train_val.json'
+    raw_psg_traval_data='/share/data/psg/dataset/for_participants/psg_train_val.json'
+    raw_psg_valtest_data='/share/data/psg/dataset/for_participants/psg_val_test.json'
     # raw_coco_val_json_file='/share/data/coco/annotations/instances_val2017.json'
 
     # output file
@@ -358,7 +362,8 @@ if __name__ == '__main__':
     #     new_json_file=output_coco80_val_instance_json,
     # )
     f1(
-        raw_psg_data=raw_psg_data,
+        raw_psg_data=raw_psg_traval_data,
+        raw_psg_valtest_data=raw_psg_valtest_data,
         coco80_instance_val2017_json=output_coco80_val_instance_json,
         output_val_instance_json=output_val_instance_json,
         output_tra_json=output_tra_json,
