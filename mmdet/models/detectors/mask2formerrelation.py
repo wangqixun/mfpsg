@@ -93,7 +93,10 @@ class MaskFormerRelation(SingleStageDetector):
             self.train_add_noise_mask = self.relationship_head.train_add_noise_mask
             self.embedding_add_cls = self.relationship_head.embedding_add_cls
             self.mask_shake = self.relationship_head.mask_shake   
-            self.cls_embedding_mode = self.relationship_head.cls_embedding_mode         
+            self.cls_embedding_mode = self.relationship_head.cls_embedding_mode
+
+            if self.use_background_feature:
+                self.relu = nn.ReLU(inplace=True)
 
         for layer_name in freeze_layers:
             m = getattr(self, layer_name)
@@ -260,7 +263,10 @@ class MaskFormerRelation(SingleStageDetector):
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
             background_feature = self._mask_pooling(feature, 1 - gt_mask, output_size=self.entity_length)  # [output_size, 256]
-            embedding_thing = embedding_thing + background_feature
+            # embedding_thing = embedding_thing + background_feature
+            # 一种新的背景融合方式
+            embedding_thing = self.relu(embedding_thing + background_feature) - (embedding_thing - background_feature)**2
+
 
         # [output_size, 256]
         return embedding_thing
@@ -304,8 +310,9 @@ class MaskFormerRelation(SingleStageDetector):
             # background_feature = feature[None] * background_mask[:, None]
             # background_feature = background_feature.sum(dim=[-2, -1]) / (background_mask[:, None].sum(dim=[-2, -1]) + 1e-8)
             background_feature = self._mask_pooling(feature, 1 - mask_staff, output_size=self.entity_length)  # [output_size, 256]
-            embedding_staff = embedding_staff + background_feature
-        
+            # embedding_staff = embedding_staff + background_feature
+            embedding_staff = self.relu(embedding_staff + background_feature) - (embedding_staff - background_feature)**2
+
         # [output_size, 256]
         return embedding_staff
 
@@ -744,7 +751,8 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                 background_feature = (feature_map * background_mask).sum(dim=[2, 3]) / (background_mask.sum(dim=[2, 3]) + 1e-8)
                 background_feature = background_feature[None]
                 # entity_embedding [1, n, 256]
-                entity_embedding = entity_embedding + background_feature
+                # entity_embedding = entity_embedding + background_feature
+                entity_embedding = self.relu(entity_embedding + background_feature) - (entity_embedding - background_feature)**2
 
         # entity_embedding [1, n, 256]
         return entity_embedding, entity_id_list, entity_score_list
