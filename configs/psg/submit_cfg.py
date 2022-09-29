@@ -7,7 +7,7 @@ num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
 # 
-data_dir = '/root/data'
+data_dir = '/root/test_submit/data'
 psg_dataset_dir = '/share/data/psg/dataset/'
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'

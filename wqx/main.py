@@ -340,27 +340,22 @@ def f1(raw_psg_data, raw_psg_valtest_data, coco80_instance_val2017_json, output_
 
 
 if __name__ == '__main__':
-    # raw data file
-    raw_psg_traval_data='/share/data/psg/dataset/for_participants/psg_train_val.json'
-    raw_psg_valtest_data='/share/data/psg/dataset/for_participants/psg_val_test.json'
-    # raw_coco_val_json_file='/share/data/coco/annotations/instances_val2017.json'
 
-    # output file
-    # output_coco80_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/instances_val2017_coco80.json'
-    # output_tra_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_tra.json'
-    # output_val_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
-    # output_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_val.json'
-
+    # TODO 
+    # needs to be modified
+    # ==== start ====
+    psg_dataset_dir = '/share/data/psg/dataset'
     output_tra_json='/root/test_submit/data/psg_tra.json'
     output_val_json='/root/test_submit/data/psg_val.json'
+    # ==== end ====
+
+
+
+
+    raw_psg_traval_data=f'{psg_dataset_dir}/for_participants/psg_train_val.json'
+    raw_psg_valtest_data=f'{psg_dataset_dir}/for_participants/psg_val_test.json'
     output_coco80_val_instance_json = None
     output_val_instance_json = None
-
-
-    # coco90_to_coco80(
-    #     raw_json_file=raw_coco_val_json_file,
-    #     new_json_file=output_coco80_val_instance_json,
-    # )
     f1(
         raw_psg_data=raw_psg_traval_data,
         raw_psg_valtest_data=raw_psg_valtest_data,
