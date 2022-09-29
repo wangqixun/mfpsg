@@ -6,14 +6,22 @@ num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
-# 
+
+# TODO 
+# needs to be modified
+# ==== start ========================================================================================
 psg_dataset_dir = '/share/data/psg/dataset'
 data_dir = '/root/test_submit/data'
 
-load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-pretrained_transformers = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext'
-cache_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/tmp'
-work_dir = '/root/mfpsg/output/test_submit'
+# https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former
+load_from = '/root/test_submit/pretrain_model/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
+# https://huggingface.co/hfl/chinese-roberta-wwm-ext
+pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'
+cache_dir = '/root/test_submit/output/tmp'
+work_dir = '/root/test_submit/output/v36'
+# ==== end ==========================================================================================
+
+
 
 
 model = dict(
@@ -319,41 +327,4 @@ workflow = [('train', 1)]
 opencv_num_threads = 0
 mp_start_method = 'fork'
 
-
-
-# max_iters = 368750
-# runner = dict(type='IterBasedRunner', max_iters=max_iters)
-# learning policy
-# lr_config = dict(
-#     policy='step',
-#     gamma=0.1,
-#     by_epoch=False,
-#     step=[327778, 355092],
-#     warmup='linear',
-#     warmup_by_epoch=False,
-#     warmup_ratio=1.0,  # no warmup
-#     warmup_iters=10)
-# log_config = dict(
-#     interval=50,
-#     hooks=[
-#         dict(type='TextLoggerHook', by_epoch=False),
-#         dict(type='TensorboardLoggerHook', by_epoch=False)
-#     ])
-# custom_hooks = [dict(type='NumClassCheckHook')]
-# dist_params = dict(backend='nccl')
-# log_level = 'INFO'
-# opencv_num_threads = 0
-# mp_start_method = 'fork'
-# auto_scale_lr = dict(enable=False, base_batch_size=12)
-# interval = 100
-# workflow = [('train', interval)]
-# checkpoint_config = dict(
-#     by_epoch=False, interval=interval, save_last=True, max_keep_ckpts=3)
-# dynamic_intervals = [(max_iters // interval * interval + 1, max_iters)]
-# evaluation = dict(
-#     interval=interval,
-#     dynamic_intervals=dynamic_intervals,
-#     metric=['PQ', 'bbox', 'segm'])
-
-# resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v25/latest.pth'
 resume_from = None
