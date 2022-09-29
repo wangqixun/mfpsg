@@ -67,32 +67,15 @@ python wqx/main.py
 <br>
 
 ## 训练
-+ 调整 `configs/psg/mask2former_r50.py` 中预训练路径、输出路径、tra val 数据路径
++ 调整 `configs/psg/submit_cfg.py` 中预训练路径、输出路径、tra val 数据路径
 ```python
-# 模型中预训练部分
-model['relationship_head']['pretrained_transformers'] = "/path/chinese-roberta-wwm-ext"
-load_from = "/path/mask2former_r50_lsj_8x2_50e_coco-panoptic_20220326_224516-11a44721.pth"
-# tra 数据部分
-data['train']['ann_file'] = 'data/psg_tra.json'
-data['train']['img_prefix'] = '/path/psg/dataset/'
-data['train']['seg_prefix'] = '/path/psg/dataset/'
-# val 数据部分
-data['val']['ann_file'] = 'data/psg_val.json'
-data['val']['img_prefix'] = '/path/psg/dataset/'
-data['val']['seg_prefix'] = '/path/psg/dataset/'
-data['val']['ins_ann_file'] = 'data/psg_instance_val.json'
-# test 数据部分
-data['test']['ann_file'] = 'data/psg_val.json'
-data['test']['img_prefix'] = '/path/psg/dataset/'
-data['test']['seg_prefix'] = '/path/psg/dataset/'
-data['test']['ins_ann_file'] = 'data/psg_instance_val.json'
 # 输出路径
 work_dir = 'output/v0'
 ```
 + 训练咯
 ```
 # 8卡训练
-bash tools/dist_train.sh configs/psg/mask2former_r50.py 8 
+bash tools/dist_train.sh configs/psg/submit_cfg.py 8 
 ```
 
 <br>
@@ -109,12 +92,12 @@ if __name__ == '__main__':
 ```
 + 推理
 ```
-mkdir -p /share/wangqixun/workspace/bs/psg/mfpsg/submit/val/submission/panseg
+
 python wqx/infer_p.py
 ```
 + 打包
 ```
-cd submit/v0
+cd submit/
 zip -r submission.zip submission/
 ```
 
