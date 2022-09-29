@@ -169,28 +169,40 @@ def get_val_p(mode, test_pipeline_img_scale, cfg, ckp, psg_tra_data_file, psg_va
 
 
 if __name__ == '__main__':
-    # get_tra_val_test_list()
-    # get_test_p()
+    # local
+    # get_val_p(
+    #     mode='val',
+    #     test_pipeline_img_scale=(1500, 1500),
+    #     cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v39-slurm.py',
+    #     ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v39/epoch_12.pth',
+    #     val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v39_1500',
+    #     test_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit',
+
+    #     psg_tra_data_file='/share/data/psg/dataset/for_participants/psg_train_val.json',
+    #     psg_val_data_file='/share/data/psg/dataset/for_participants/psg_val_test.json',
+    #     img_dir='/share/data/psg/dataset',
+    #     transformers_model='/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext',
+    # )
+
+    # test submit
+    psg_dataset_dir = '/share/data/psg/dataset'
+    config_file = '/root/mfpsg/configs/psg/submit_cfg.py'
+    checkpoint_file = '/root/test_submit/output/v36/epoch_12.pth'
+    pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'
+    submit_output_dir = '/root/test_submit/submit'
+
     get_val_p(
         mode='val',
         test_pipeline_img_scale=(1500, 1500),
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v39-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v39/epoch_12.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v39_1500',
-        test_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit',
-
-        psg_tra_data_file='/share/data/psg/dataset/for_participants/psg_train_val.json',
-        psg_val_data_file='/share/data/psg/dataset/for_participants/psg_val_test.json',
-        img_dir='/share/data/psg/dataset',
-        transformers_model='/share/wangqixun/workspace/bs/tx_mm/code/model_dl/hfl/chinese-roberta-wwm-ext',
+        cfg=config_file,
+        ckp=checkpoint_file,
+        val_mode_output_dir=os.path.join(submit_output_dir, 'val_test_submit'),
+        test_mode_output_dir=submit_output_dir,
+        psg_tra_data_file=os.path.join(psg_dataset_dir, 'for_participants/psg_train_val.json'),
+        psg_val_data_file=os.path.join(psg_dataset_dir, 'for_participants/psg_val_test.json'),
+        img_dir=psg_dataset_dir,
+        transformers_model=pretrained_transformers,
     )
-
-    # landmark
-    # best v1 ep30 31.3
-    # v4 ep30 32.36
-    # v5 ep30 31.94
-
-
 
 
 

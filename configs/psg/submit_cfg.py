@@ -12,10 +12,9 @@ depths = [2, 2, 18, 2]
 # ==== start ========================================================================================
 psg_dataset_dir = '/share/data/psg/dataset'
 data_dir = '/root/test_submit/data'
-
-# https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former
+# weight from https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former
 load_from = '/root/test_submit/pretrain_model/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-# https://huggingface.co/hfl/chinese-roberta-wwm-ext
+# weight from https://huggingface.co/hfl/chinese-roberta-wwm-ext
 pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'
 cache_dir = '/root/test_submit/output/tmp'
 work_dir = '/root/test_submit/output/v36'
