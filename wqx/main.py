@@ -350,6 +350,7 @@ if __name__ == '__main__':
     # ==== end ====
 
 
+    os.makedirs(data_dir, exist_ok=True)
     raw_psg_traval_data = os.path.join(psg_dataset_dir, 'for_participants/psg_train_val.json')
     raw_psg_valtest_data = os.path.join(psg_dataset_dir, 'for_participants/psg_val_test.json')
     output_tra_json = os.path.join(data_dir, 'psg_tra.json')
