@@ -190,7 +190,7 @@ if __name__ == '__main__':
     # ==== start ========================================================================================
     psg_dataset_dir = '/share/data/psg/dataset'  # 原始psg数据地址
     config_file = '/root/mfpsg/configs/psg/submit_cfg.py'  # 训练时候用的config
-    checkpoint_file = '/root/test_submit/output/v36/epoch_12.pth'  # 训练得到的权重
+    checkpoint_file = '/root/checkpoint/epoch_12.pth'  # 训练得到的权重。默认的地址是我们训练出来的权重
     pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'  # 训练时用的 pretrained_transformers
     submit_output_dir = '/root/test_submit/submit'  # submit 输出地址
     # ==== end ==========================================================================================
