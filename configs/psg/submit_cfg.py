@@ -7,8 +7,8 @@ num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
 # 
-data_dir = '/root/test_submit/data'
 psg_dataset_dir = '/share/data/psg/dataset'
+data_dir = '/root/test_submit/data'
 
 load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 pretrained_transformers = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext'
@@ -248,20 +248,20 @@ data = dict(
     train=dict(
         type=dataset_type,
         ann_file=f'{data_dir}/psg_tra.json',
-        img_prefix=psg_dataset_dir,
-        seg_prefix=psg_dataset_dir,
+        img_prefix=psg_dataset_dir+'/',
+        seg_prefix=psg_dataset_dir+'/',
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file=f'{data_dir}/psg_val.json',
-        img_prefix=psg_dataset_dir,
-        seg_prefix=psg_dataset_dir,
+        img_prefix=psg_dataset_dir+'/',
+        seg_prefix=psg_dataset_dir+'/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=f'{data_dir}/psg_val.json',
-        img_prefix=psg_dataset_dir,
-        seg_prefix=psg_dataset_dir,
+        img_prefix=psg_dataset_dir+'/',
+        seg_prefix=psg_dataset_dir+'/',
         pipeline=test_pipeline))
 evaluation = dict(metric=['pq'], classwise=True)
 

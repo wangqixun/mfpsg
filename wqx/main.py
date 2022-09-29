@@ -366,3 +366,4 @@ if __name__ == '__main__':
         output_val_json=output_val_json,
     )
 
+    os.system(f'ls {data_dir}')
