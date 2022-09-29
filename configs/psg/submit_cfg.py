@@ -6,9 +6,15 @@ num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
 
+# 
+data_dir = '/root/data'
+psg_dataset_dir = '/share/data/psg/dataset/'
 
+load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 pretrained_transformers = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/hfl/chinese-roberta-wwm-ext'
 cache_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/tmp'
+work_dir = '/root/mfpsg/output/test_submit'
+
 
 model = dict(
     type='Mask2FormerRelation',
@@ -241,23 +247,21 @@ data = dict(
     workers_per_gpu=2,
     train=dict(
         type=dataset_type,
-        ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_tra.json',
-        img_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        seg_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
+        ann_file=f'{data_dir}/psg_tra.json',
+        img_prefix=psg_dataset_dir,
+        seg_prefix=psg_dataset_dir,
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
-        ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_val.json',
-        img_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        seg_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        # ins_ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_instance_val.json',
+        ann_file=f'{data_dir}/psg_val.json',
+        img_prefix=psg_dataset_dir,
+        seg_prefix=psg_dataset_dir,
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
-        ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_val.json',
-        img_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        seg_prefix='/mnt/mmtech01/dataset/v_cocomask/psg/',
-        # ins_ann_file='/mnt/mmtech01/dataset/v_cocomask/psg/ann/psg_instance_val.json',
+        ann_file=f'{data_dir}/psg_val.json',
+        img_prefix=psg_dataset_dir,
+        seg_prefix=psg_dataset_dir,
         pipeline=test_pipeline))
 evaluation = dict(metric=['pq'], classwise=True)
 
@@ -351,7 +355,5 @@ mp_start_method = 'fork'
 #     dynamic_intervals=dynamic_intervals,
 #     metric=['PQ', 'bbox', 'segm'])
 
-load_from = '/mnt/mmtech01/usr/guiwan/workspace/model_dl/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
 # resume_from = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v25/latest.pth'
 resume_from = None
-work_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/v36'

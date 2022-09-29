@@ -351,8 +351,8 @@ if __name__ == '__main__':
     # output_val_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
     # output_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_val.json'
 
-    output_tra_json='/root/mfpsg/data/psg_tra.json'
-    output_val_json='/root/mfpsg/data/psg_val.json'
+    output_tra_json='/root/test_submit/data/psg_tra.json'
+    output_val_json='/root/test_submit/data/psg_val.json'
     output_coco80_val_instance_json = None
     output_val_instance_json = None
 
