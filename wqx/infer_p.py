@@ -10,6 +10,8 @@ from tqdm import tqdm
 from IPython import embed
 import json
 
+import copy
+
 
 def write_json(x_struct: dict, json_file: str):
     #json_str = json.dumps(x_struct,indent=2,ensure_ascii=False)
@@ -22,7 +24,7 @@ def load_json(json_file):
     return data
 
 
-def get_model(cfg, ckp, transformers_model):
+def get_model(cfg, ckp, test_pipeline_img_scale, transformers_model):
     cfg = mmcv.Config.fromfile(cfg)
 
     cfg['model']['type'] = 'Mask2FormerRelationForinfer'
@@ -31,6 +33,10 @@ def get_model(cfg, ckp, transformers_model):
     cfg['model']['relationship_head']['cache_dir'] = './'    
     if 'entity_length' in cfg['model']['relationship_head'] and cfg['model']['relationship_head']['entity_length'] > 1:
         cfg['model']['relationship_head']['entity_part_encoder'] = transformers_model
+
+    test_pipeline = copy.deepcopy(cfg['data']['test']['pipeline'])
+    test_pipeline[1]['img_scale'] = test_pipeline_img_scale
+    cfg['data']['test']['pipeline'] = test_pipeline
 
     model = init_detector(cfg, ckp)
     return model
@@ -59,11 +65,11 @@ def get_tra_val_test_list(psg_tra_data_file, psg_val_data_file):
     print('tra', len(tra_id_list))
     print('val', len(val_id_list))
     print('test', len(test_id_list))
-    
+
     return tra_id_list, val_id_list, test_id_list
 
 
-def get_val_p(mode, cfg, ckp, psg_tra_data_file, psg_val_data_file, img_dir, val_mode_output_dir, test_mode_output_dir, transformers_model):
+def get_val_p(mode, test_pipeline_img_scale, cfg, ckp, psg_tra_data_file, psg_val_data_file, img_dir, val_mode_output_dir, test_mode_output_dir, transformers_model):
 
 
     if mode == 'val':
@@ -71,7 +77,7 @@ def get_val_p(mode, cfg, ckp, psg_tra_data_file, psg_val_data_file, img_dir, val
         json_output_dir = os.path.join(val_mode_output_dir, 'submission')
     else:
         jpg_output_dir = os.path.join(test_mode_output_dir, mode,'submission/panseg')
-        jpg_output_dir = os.path.join(test_mode_output_dir, mode,'submission')
+        json_output_dir = os.path.join(test_mode_output_dir, mode,'submission')
 
     os.makedirs(jpg_output_dir, exist_ok=True)
 
@@ -84,7 +90,7 @@ def get_val_p(mode, cfg, ckp, psg_tra_data_file, psg_val_data_file, img_dir, val
     )
     psg_val_data = load_json(psg_val_data_file)
 
-    model = get_model(cfg, ckp, transformers_model=transformers_model)
+    model = get_model(cfg, ckp, test_pipeline_img_scale, transformers_model=transformers_model)
 
     cur_nb = -1
     nb_vis = None
@@ -167,9 +173,10 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v36-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v36/epoch_12.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v36_latest',
+        test_pipeline_img_scale=(1500, 1500),
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v39-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v39/epoch_12.pth',
+        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v39_1500',
         test_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit',
 
         psg_tra_data_file='/share/data/psg/dataset/for_participants/psg_train_val.json',
