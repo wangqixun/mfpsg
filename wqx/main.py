@@ -305,6 +305,14 @@ def f3(psg_data, id_list, output_instance_json, coco_json_file):
     
 
 def f1(raw_psg_data, coco80_instance_val2017_json, output_tra_json, output_val_json, output_val_instance_json, ):
+    # output_tra_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_tra.json'
+    # output_val_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
+    # output_tra_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_tra.json'
+    # output_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_val.json'
+    # raw_psg_data = '/share/data/psg/dataset/for_participants/psg_train_val.json'
+
+    # coco80_instance_train2017_json = '/share/data/coco/annotations/instances_train2017_coco80.json'
+    # coco80_instance_val2017_json = '/share/data/coco/annotations/instances_val2017_coco80.json'
 
     tra_id_list, val_id_list, test_id_list = get_tra_val_test_list()
 
@@ -316,7 +324,7 @@ def f1(raw_psg_data, coco80_instance_val2017_json, output_tra_json, output_val_j
     f2(psg_data, val_id_list, output_val_json)
     # psg数据改成coco instance 格式，用来计算psg val上 bbox map 和 segm map
     # f3(psg_data, tra_id_list, output_tra_instance_json, coco_json_file=coco80_instance_train2017_json)
-    f3(psg_data, val_id_list, output_val_instance_json, coco_json_file=coco80_instance_val2017_json)
+    # f3(psg_data, val_id_list, output_val_instance_json, coco_json_file=coco80_instance_val2017_json)
 
 
 
@@ -331,24 +339,29 @@ def f1(raw_psg_data, coco80_instance_val2017_json, output_tra_json, output_val_j
 if __name__ == '__main__':
     # raw data file
     raw_psg_data='/share/data/psg/dataset/for_participants/psg_train_val.json'
-    raw_coco_val_json_file='/share/data/coco/annotations/instances_val2017.json'
+    # raw_coco_val_json_file='/share/data/coco/annotations/instances_val2017.json'
 
     # output file
-    output_coco80_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/instances_val2017_coco80.json'
-    output_tra_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_tra.json'
-    output_val_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
-    output_val_instance_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_val.json'
+    # output_coco80_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/instances_val2017_coco80.json'
+    # output_tra_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_tra.json'
+    # output_val_json='/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
+    # output_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_val.json'
+
+    output_tra_json='/root/mfpsg/data/psg_tra.json'
+    output_val_json='/root/mfpsg/data/psg_val.json'
+    output_coco80_val_instance_json = None
+    output_val_instance_json = None
 
 
-    coco90_to_coco80(
-        raw_json_file=raw_coco_val_json_file,
-        new_json_file=output_coco80_val_instance_json,
-    )
+    # coco90_to_coco80(
+    #     raw_json_file=raw_coco_val_json_file,
+    #     new_json_file=output_coco80_val_instance_json,
+    # )
     f1(
         raw_psg_data=raw_psg_data,
         coco80_instance_val2017_json=output_coco80_val_instance_json,
+        output_val_instance_json=output_val_instance_json,
         output_tra_json=output_tra_json,
         output_val_json=output_val_json,
-        output_val_instance_json=output_val_instance_json,
     )
 
