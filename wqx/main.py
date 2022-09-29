@@ -345,8 +345,8 @@ if __name__ == '__main__':
     # TODO 
     # needs to be modified
     # ==== start ====
-    psg_dataset_dir = '/share/data/psg/dataset'
-    data_dir = '/root/test_submit/data'
+    psg_dataset_dir = '/share/data/psg/dataset'  # 原始psg数据地址
+    data_dir = '/root/test_submit/data'  # 预处理数据输出地址
     # ==== end ====
 
 

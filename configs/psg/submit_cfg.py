@@ -1,3 +1,17 @@
+# TODO 
+# needs to be modified
+# ==== start ========================================================================================
+psg_dataset_dir = '/share/data/psg/dataset'  # 原始psg数据地址
+data_dir = '/root/test_submit/data'  # 预处理数据地址
+# weight from https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former
+load_from = '/root/test_submit/pretrain_model/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'  # 预训练权重 mask2former 
+# weight from https://huggingface.co/hfl/chinese-roberta-wwm-ext
+pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'  # 预训练权重 roberta
+cache_dir = '/root/test_submit/output/tmp'  # cache地址，随便给一个就行，/tmp 就行 
+work_dir = '/root/test_submit/output/v36'  # 输出地址
+# ==== end ==========================================================================================
+
+
 find_unused_parameters=True
 
 num_relation = 56
@@ -5,23 +19,6 @@ num_things_classes = 80
 num_stuff_classes = 53
 num_classes = num_things_classes + num_stuff_classes
 depths = [2, 2, 18, 2]
-
-
-# TODO 
-# needs to be modified
-# ==== start ========================================================================================
-psg_dataset_dir = '/share/data/psg/dataset'
-data_dir = '/root/test_submit/data'
-# weight from https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former
-load_from = '/root/test_submit/pretrain_model/mask2former_swin-b-p4-w12-384-in21k_lsj_8x2_50e_coco-panoptic_20220329_230021-3bb8b482.pth'
-# weight from https://huggingface.co/hfl/chinese-roberta-wwm-ext
-pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'
-cache_dir = '/root/test_submit/output/tmp'
-work_dir = '/root/test_submit/output/v36'
-# ==== end ==========================================================================================
-
-
-
 
 model = dict(
     type='Mask2FormerRelation',

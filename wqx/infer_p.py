@@ -169,7 +169,7 @@ def get_val_p(mode, test_pipeline_img_scale, cfg, ckp, psg_tra_data_file, psg_va
 
 
 if __name__ == '__main__':
-    # local
+    # local 
     # get_val_p(
     #     mode='val',
     #     test_pipeline_img_scale=(1500, 1500),
@@ -185,14 +185,17 @@ if __name__ == '__main__':
     # )
 
     # test submit
-    psg_dataset_dir = '/share/data/psg/dataset'
-    config_file = '/root/mfpsg/configs/psg/submit_cfg.py'
-    checkpoint_file = '/root/test_submit/output/v36/epoch_12.pth'
-    pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'
-    submit_output_dir = '/root/test_submit/submit'
-
+    # TODO 
+    # needs to be modified
+    # ==== start ========================================================================================
+    psg_dataset_dir = '/share/data/psg/dataset'  # 原始psg数据地址
+    config_file = '/root/mfpsg/configs/psg/submit_cfg.py'  # 训练时候用的config
+    checkpoint_file = '/root/test_submit/output/v36/epoch_12.pth'  # 训练得到的权重
+    pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'  # 训练时用的 pretrained_transformers
+    submit_output_dir = '/root/test_submit/submit'  # submit 输出地址
+    # ==== end ==========================================================================================
     get_val_p(
-        mode='val',
+        mode='v36',
         test_pipeline_img_scale=(1500, 1500),
         cfg=config_file,
         ckp=checkpoint_file,
