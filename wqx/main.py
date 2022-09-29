@@ -4,6 +4,7 @@ from infer_p import get_tra_val_test_list
 # from tqdm import tqdm
 import json
 import mmcv
+import os
 
 def write_json(x_struct: dict, json_file: str):
     with open(json_file, 'w') as fd:
@@ -345,15 +346,14 @@ if __name__ == '__main__':
     # needs to be modified
     # ==== start ====
     psg_dataset_dir = '/share/data/psg/dataset'
-    output_tra_json='/root/test_submit/data/psg_tra.json'
-    output_val_json='/root/test_submit/data/psg_val.json'
+    data_dir = '/root/test_submit/data'
     # ==== end ====
 
 
-
-
-    raw_psg_traval_data=f'{psg_dataset_dir}/for_participants/psg_train_val.json'
-    raw_psg_valtest_data=f'{psg_dataset_dir}/for_participants/psg_val_test.json'
+    raw_psg_traval_data = os.path.join(psg_dataset_dir, 'for_participants/psg_train_val.json')
+    raw_psg_valtest_data = os.path.join(psg_dataset_dir, 'for_participants/psg_val_test.json')
+    output_tra_json = os.path.join(data_dir, 'psg_tra.json')
+    output_val_json = os.path.join(data_dir, 'psg_val.json')
     output_coco80_val_instance_json = None
     output_val_instance_json = None
     f1(
