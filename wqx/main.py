@@ -306,15 +306,6 @@ def f3(psg_data, id_list, output_instance_json, coco_json_file):
     
 
 def f1(raw_psg_data, raw_psg_valtest_data, coco80_instance_val2017_json, output_tra_json, output_val_json, output_val_instance_json, ):
-    # output_tra_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_tra.json'
-    # output_val_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_val.json'
-    # output_tra_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_tra.json'
-    # output_val_instance_json = '/share/wangqixun/workspace/bs/psg/psg/data/psg_instance_val.json'
-    # raw_psg_data = '/share/data/psg/dataset/for_participants/psg_train_val.json'
-
-    # coco80_instance_train2017_json = '/share/data/coco/annotations/instances_train2017_coco80.json'
-    # coco80_instance_val2017_json = '/share/data/coco/annotations/instances_val2017_coco80.json'
-
     tra_id_list, val_id_list, test_id_list = get_tra_val_test_list(
         psg_tra_data_file=raw_psg_data, 
         psg_val_data_file=raw_psg_valtest_data,
@@ -326,9 +317,6 @@ def f1(raw_psg_data, raw_psg_valtest_data, coco80_instance_val2017_json, output_
     # 其中 "relations" 在 "annotations" 的元素中
     f2(psg_data, tra_id_list, output_tra_json)
     f2(psg_data, val_id_list, output_val_json)
-    # psg数据改成coco instance 格式，用来计算psg val上 bbox map 和 segm map
-    # f3(psg_data, tra_id_list, output_tra_instance_json, coco_json_file=coco80_instance_train2017_json)
-    # f3(psg_data, val_id_list, output_val_instance_json, coco_json_file=coco80_instance_val2017_json)
 
 
 
