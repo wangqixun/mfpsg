@@ -206,7 +206,6 @@ if __name__ == '__main__':
         img_dir=psg_dataset_dir,
         transformers_model=pretrained_transformers,
     )
-    test()
 
 
 
