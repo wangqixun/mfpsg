@@ -244,7 +244,7 @@ class BertTransformer(BaseModule):
             loss = loss * weight
 
             focal_loss = self.sigmoid_focal_loss(input_tensor, target_tensor)
-            loss += focal_loss
+            loss = loss.mean() + focal_loss.mean()
 
         loss = loss.mean()
         losses['loss_relationship'] = loss * self.loss_weight
