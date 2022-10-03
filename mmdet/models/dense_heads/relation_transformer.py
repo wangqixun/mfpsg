@@ -267,6 +267,7 @@ class BertTransformer(BaseModule):
 
     def multilabel_categorical_crossentropy(self, y_true, y_pred):
         """多标签分类的交叉熵
+        from 苏剑林/科学空间
         说明：y_true和y_pred的shape一致，y_true的元素非0即1，
             1表示对应的类为目标类，0表示对应的类为非目标类。
         警告：请保证y_pred的值域是全体实数，换言之一般情况下y_pred
