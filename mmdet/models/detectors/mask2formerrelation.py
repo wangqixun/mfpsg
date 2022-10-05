@@ -818,9 +818,9 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             relationship_output = relationship_output * entity_score_tensor[None, None, :]
 
             # relationship weight
-            # for ratio_th, weight in [[[0, 1/100], 10],  ]:
-            #     mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-            #     relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
+            for ratio_th, weight in [[[0, 1/100], 10],  ]:
+                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
+                relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
             # for idx_rela in [8, 11, 19, 25, 26, 29, 31, 32, 34, 35, 36, 39, 40, 41, 42, 51, 53, 54]:
             # for idx_rela in [50, 25, 40, 29]:  # 0.5+
             #     relationship_output[idx_rela] = relationship_output[idx_rela] * 300

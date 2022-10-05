@@ -167,9 +167,9 @@ if __name__ == '__main__':
     # get_test_p()
     get_val_p(
         mode='val',
-        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v40-slurm.py',
-        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v40/epoch_12.pth',
-        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v40_latest',
+        cfg='/share/wangqixun/workspace/bs/psg/mfpsg/configs/psg/v54-slurm.py',
+        ckp='/share/wangqixun/workspace/bs/psg/mfpsg/output/v54/epoch_12.pth',
+        val_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit/val_v54_latest',
         test_mode_output_dir='/share/wangqixun/workspace/bs/psg/mfpsg/submit',
 
         psg_tra_data_file='/share/data/psg/dataset/for_participants/psg_train_val.json',
