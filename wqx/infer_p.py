@@ -42,6 +42,19 @@ def get_model(cfg, ckp, test_pipeline_img_scale, transformers_model):
     return model
 
 
+def get_test_id(psg_test_data_file):
+    dataset = load_json(psg_test_data_file)
+    test_id_list = [ 
+        d['image_id'] for d in dataset['data'] if (d['image_id'] in dataset['test_image_ids']) and (len(d['relations']) != 0)
+    ]
+    return test_id_list
+
+    # dataset['data'] = [
+    #     d for d in dataset['data'] if len(d['relations']) != 0
+    # ]
+
+
+
 def get_tra_val_test_list(psg_tra_data_file, psg_val_data_file):
     psg_tra_data = load_json(psg_tra_data_file)
     psg_val_data = load_json(psg_val_data_file)
@@ -69,26 +82,16 @@ def get_tra_val_test_list(psg_tra_data_file, psg_val_data_file):
     return tra_id_list, val_id_list, test_id_list
 
 
-def get_val_p(mode, test_pipeline_img_scale, cfg, ckp, psg_tra_data_file, psg_val_data_file, img_dir, val_mode_output_dir, test_mode_output_dir, transformers_model):
+def get_val_p(test_pipeline_img_scale, cfg, ckp, psg_test_data_file, img_dir, test_mode_output_dir, transformers_model):
 
-
-    if mode == 'val':
-        jpg_output_dir = os.path.join(val_mode_output_dir, 'submission/panseg')
-        json_output_dir = os.path.join(val_mode_output_dir, 'submission')
-    else:
-        jpg_output_dir = os.path.join(test_mode_output_dir, mode,'submission/panseg')
-        json_output_dir = os.path.join(test_mode_output_dir, mode,'submission')
+    jpg_output_dir = os.path.join(test_mode_output_dir,'submission/panseg')
+    json_output_dir = os.path.join(test_mode_output_dir,'submission')
 
     os.makedirs(jpg_output_dir, exist_ok=True)
-
     INSTANCE_OFFSET = 1000
 
-
-    tra_id_list, val_id_list, test_id_list = get_tra_val_test_list(
-        psg_tra_data_file=psg_tra_data_file,
-        psg_val_data_file=psg_val_data_file,
-    )
-    psg_val_data = load_json(psg_val_data_file)
+    test_id_list = get_test_id(psg_test_data_file)
+    psg_test_data = load_json(psg_test_data_file)
 
     model = get_model(cfg, ckp, test_pipeline_img_scale, transformers_model=transformers_model)
 
@@ -96,15 +99,11 @@ def get_val_p(mode, test_pipeline_img_scale, cfg, ckp, psg_tra_data_file, psg_va
     nb_vis = None
 
     all_img_dicts = []
-    for d in tqdm(psg_val_data['data']):
-        cur_nb += 1
-        if nb_vis is not None and cur_nb > nb_vis:
-            continue
-
+    for d in tqdm(psg_test_data['data']):
         image_id = d['image_id']
-
-        if mode=='val' and image_id not in val_id_list:
+        if image_id not in test_id_list:
             continue
+        cur_nb += 1
 
         img_file = os.path.join(img_dir, d['file_name'])
         img = cv2.imread(img_file)
@@ -188,22 +187,21 @@ if __name__ == '__main__':
     # TODO 
     # needs to be modified
     # ==== start ========================================================================================
+    submit_output_dir = '/root/test_submit/raw'  # submit 输出地址
+
+    psg_test_data_file = '/share/data/psg/dataset/for_participants/psg_test.json'
     psg_dataset_dir = '/share/data/psg/dataset'  # 原始psg数据地址
     config_file = '/root/mfpsg/configs/psg/submit_cfg.py'  # 训练时候用的config
     checkpoint_file = '/root/checkpoint/epoch_12.pth'  # 训练得到的权重。默认的地址是我们训练出来的权重
     pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'  # 训练时用的 pretrained_transformers
-    submit_output_dir = '/root/test_submit/submit'  # submit 输出地址
     # ==== end ==========================================================================================
     get_val_p(
-        mode='v36',
         test_pipeline_img_scale=(1500, 1500),
         cfg=config_file,
         ckp=checkpoint_file,
-        val_mode_output_dir=os.path.join(submit_output_dir, 'val_test_submit'),
-        test_mode_output_dir=submit_output_dir,
-        psg_tra_data_file=os.path.join(psg_dataset_dir, 'for_participants/psg_train_val.json'),
-        psg_val_data_file=os.path.join(psg_dataset_dir, 'for_participants/psg_val_test.json'),
+        psg_test_data_file=psg_test_data_file,
         img_dir=psg_dataset_dir,
+        test_mode_output_dir=submit_output_dir,
         transformers_model=pretrained_transformers,
     )
 
