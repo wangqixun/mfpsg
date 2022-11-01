@@ -55,33 +55,6 @@ def get_test_id(psg_test_data_file):
 
 
 
-def get_tra_val_test_list(psg_tra_data_file, psg_val_data_file):
-    psg_tra_data = load_json(psg_tra_data_file)
-    psg_val_data = load_json(psg_val_data_file)
-
-    tra_id_list = []
-    val_id_list = []
-    test_id_list = []
-
-    for d in psg_tra_data['data']:
-        if d['image_id'] in psg_tra_data['test_image_ids']:
-            val_id_list.append(d['image_id'])
-        else:
-            tra_id_list.append(d['image_id'])
-
-    for d in psg_val_data['data']:
-        test_id_list.append(d['image_id'])
-    
-    tra_id_list = np.array(tra_id_list)
-    val_id_list = np.array(val_id_list)
-    test_id_list = np.array(test_id_list)
-    print('tra', len(tra_id_list))
-    print('val', len(val_id_list))
-    print('test', len(test_id_list))
-
-    return tra_id_list, val_id_list, test_id_list
-
-
 def get_val_p(test_pipeline_img_scale, cfg, ckp, psg_test_data_file, img_dir, test_mode_output_dir, transformers_model):
 
     jpg_output_dir = os.path.join(test_mode_output_dir,'submission/panseg')
@@ -190,10 +163,10 @@ if __name__ == '__main__':
     # TODO 
     # needs to be modified
     # ==== start ========================================================================================
-    submit_output_dir = '/root/test_submit/raw'  # submit 输出地址
+    submit_output_dir = '/share/wangqixun/workspace/bs/psg/OpenPSG/raw'  # submit 输出地址
 
     psg_test_data_file = '/share/data/psg/dataset/for_participants/psg_test.json'
-    psg_dataset_dir = '/share/data/psg/dataset'  # 原始psg数据地址
+    img_dir = '/share/data/psg/dataset'  # 图像地址
     config_file = '/root/mfpsg/configs/psg/submit_cfg.py'  # 训练时候用的config
     checkpoint_file = '/root/checkpoint/epoch_12.pth'  # 训练得到的权重。默认的地址是我们训练出来的权重
     pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'  # 训练时用的 pretrained_transformers
@@ -203,7 +176,7 @@ if __name__ == '__main__':
         cfg=config_file,
         ckp=checkpoint_file,
         psg_test_data_file=psg_test_data_file,
-        img_dir=psg_dataset_dir,
+        img_dir=img_dir,
         test_mode_output_dir=submit_output_dir,
         transformers_model=pretrained_transformers,
     )
