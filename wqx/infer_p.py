@@ -98,12 +98,15 @@ def get_val_p(test_pipeline_img_scale, cfg, ckp, psg_test_data_file, img_dir, te
     cur_nb = -1
     nb_vis = None
 
+    prog_bar = mmcv.ProgressBar(test_id_list)
     all_img_dicts = []
-    for d in tqdm(psg_test_data['data']):
+    for d in psg_test_data['data']:
         image_id = d['image_id']
         if image_id not in test_id_list:
             continue
         cur_nb += 1
+        prog_bar.update()
+
 
         img_file = os.path.join(img_dir, d['file_name'])
         img = cv2.imread(img_file)
