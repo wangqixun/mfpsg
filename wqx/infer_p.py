@@ -163,10 +163,10 @@ if __name__ == '__main__':
     # TODO 
     # needs to be modified
     # ==== start ========================================================================================
-    submit_output_dir = '/share/wangqixun/workspace/bs/psg/OpenPSG/raw_new'  # submit 输出地址
-
+    submit_output_dir = '/share/wangqixun/workspace/bs/psg/OpenPSG/submit/raw_new'  # submit 输出地址
     psg_test_data_file = '/share/data/psg/dataset/for_participants/psg_test.json'
     img_dir = '/share/data/psg/dataset'  # 图像地址
+
     config_file = '/root/mfpsg/configs/psg/submit_cfg.py'  # 训练时候用的config
     checkpoint_file = '/root/checkpoint/epoch_12.pth'  # 训练得到的权重。默认的地址是我们训练出来的权重
     pretrained_transformers = '/root/test_submit/pretrain_model/chinese-roberta-wwm-ext'  # 训练时用的 pretrained_transformers
