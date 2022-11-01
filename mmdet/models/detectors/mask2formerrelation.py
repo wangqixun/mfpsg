@@ -806,7 +806,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             for idx_i in range(relationship_output.shape[1]):
                 relationship_output[:, idx_i, idx_i] = -9999
             # 数量极少约等于0的类别
-            for idx_i in range(self.idx_rare):
+            for idx_i in self.idx_rare:
                 relationship_output[idx_i] = -9999
             relationship_output = torch.exp(relationship_output)
             # relationship_output = torch.sigmoid(relationship_output)
