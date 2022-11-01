@@ -774,6 +774,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             meta=img_metas[0]
         )
 
+        # from psg_tra_val.json
         if not hasattr(self, 'rela_cls_ratio'):
             # 每类关系数量占比
             rela_cls_ratio = [
@@ -792,6 +793,10 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             ]
             rela_cls_ratio = torch.tensor(rela_cls_ratio, dtype=dtype, device=device) / 100.
             self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
+
+            # 数量极少约等于0的类别直接舍弃
+            # self.idx_rare = [7,8,9,13,24,25,28,31,32,34,35,36,38,40,41,52,53]
+
         
         relation_res = []
         if entity_res is not None:
@@ -801,7 +806,13 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             # 对角线
             for idx_i in range(relationship_output.shape[1]):
                 relationship_output[:, idx_i, idx_i] = -9999
-            
+            # # 数量极少约等于0的类别
+            # for idx_i in self.idx_rare:
+            #     relationship_output[idx_i] = -9999
+            for ratio_th, weight in [[[0, 0.001/100], -9999],  ]:
+                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
+                relationship_output = (relationship_output + weight) * mask + relationship_output
+
             relationship_output = torch.exp(relationship_output)
             # relationship_output = torch.sigmoid(relationship_output)
 
@@ -814,9 +825,6 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             for ratio_th, weight in [[[0, 1/100], 10],  ]:
                 mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
                 relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
-            for ratio_th, weight in [[[0, 0.001/100], -9999],  ]:
-                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-                relationship_output = (relationship_output * mask + weight) + relationship_output * (1 - mask)
 
             # for idx_rela in [8, 11, 19, 25, 26, 29, 31, 32, 34, 35, 36, 39, 40, 41, 42, 51, 53, 54]:
             # for idx_rela in [50, 25, 40, 29]:  # 0.5+
