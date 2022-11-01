@@ -795,7 +795,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
 
             # 数量极少约等于0的类别直接舍弃
-            self.idx_rare = [7,8,9,13,24,25,28,31,34,35,36,40,41,52,53]
+            self.idx_rare = [7,8,9,13,24,25,28,31,32,34,35,36,38,40,41,52,53]
 
         
         relation_res = []
@@ -845,7 +845,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                     pred_object = index_subject_object % relationship_output.shape[1]
                     pred = [pred_subject.item(), pred_object.item(), pred_cls.item()]
                     relation_res.append(pred)
-            
+
         rl = dict(
             entityid_list=[eid.item() for eid in entityid_list],
             relation=relation_res,
