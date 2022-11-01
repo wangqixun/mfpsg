@@ -98,7 +98,7 @@ def get_val_p(test_pipeline_img_scale, cfg, ckp, psg_test_data_file, img_dir, te
     cur_nb = -1
     nb_vis = None
 
-    prog_bar = mmcv.ProgressBar(test_id_list)
+    prog_bar = mmcv.ProgressBar(len(test_id_list))
     all_img_dicts = []
     for d in psg_test_data['data']:
         image_id = d['image_id']
