@@ -793,15 +793,21 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             rela_cls_ratio = torch.tensor(rela_cls_ratio, dtype=dtype, device=device) / 100.
             self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
 
+            # 数量极少约等于0的类别直接舍弃
+            self.idx_rare = [7,8,9,24,25,31,34,53]
+
         
         relation_res = []
         if entity_res is not None:
             entity_embedding, entityid_list, entity_score_list = entity_res
             relationship_output = self.relationship_head(entity_embedding, attention_mask=None)
             relationship_output = relationship_output[0]
+            # 对角线
             for idx_i in range(relationship_output.shape[1]):
                 relationship_output[:, idx_i, idx_i] = -9999
-            relationship_output[2] = -9999
+            # 数量极少约等于0的类别
+            for idx_i in range(self.idx_rare):
+                relationship_output[idx_i] = -9999
             relationship_output = torch.exp(relationship_output)
             # relationship_output = torch.sigmoid(relationship_output)
 
