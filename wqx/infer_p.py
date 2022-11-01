@@ -163,7 +163,7 @@ if __name__ == '__main__':
     # TODO 
     # needs to be modified
     # ==== start ========================================================================================
-    submit_output_dir = '/share/wangqixun/workspace/bs/psg/OpenPSG/submit/new_no0'  # submit 输出地址
+    submit_output_dir = '/share/wangqixun/workspace/bs/psg/OpenPSG/submit/new_no4'  # submit 输出地址
     psg_test_data_file = '/share/data/psg/dataset/for_participants/psg_test.json'
     img_dir = '/share/data/psg/dataset'  # 图像地址
 

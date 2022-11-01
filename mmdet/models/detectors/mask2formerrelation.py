@@ -774,6 +774,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             meta=img_metas[0]
         )
 
+        # from psg_tra_val.json
         if not hasattr(self, 'rela_cls_ratio'):
             # 每类关系数量占比
             rela_cls_ratio = [
@@ -794,7 +795,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
 
             # 数量极少约等于0的类别直接舍弃
-            self.idx_rare = [7,8,9,24,25,31,34,53]
+            self.idx_rare = [7,8,9,13,24,25,28,31,34,35,36,40,41,52,53]
 
         
         relation_res = []
@@ -808,6 +809,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             # 数量极少约等于0的类别
             for idx_i in self.idx_rare:
                 relationship_output[idx_i] = -9999
+            
             relationship_output = torch.exp(relationship_output)
             # relationship_output = torch.sigmoid(relationship_output)
 
