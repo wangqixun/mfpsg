@@ -5,20 +5,6 @@
 
 
 
-## 初赛、决赛方案区别
-
-初赛、决赛均适用本repo代码，区别是决赛加了一个数量极少类别的过滤方案。具体代码在 ```mfpsg/mmdet/models/detectors/mask2formerrelation.py``` 的第```805-808``` 行增加了以下代码：
-
-```python
-# 数量极少丢弃
-for ratio_th, weight in [[[0, 0.001/100], -9999],  ]:
-    mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-    relationship_output = (relationship_output + weight) * mask + relationship_output
-```
-
-
-
-
 
 <br>
 
@@ -100,7 +86,19 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 <br>
 
-## Submit
+## Infer and Submit
+
+### 初赛、决赛方案区别
+
+初赛、决赛均适用本repo代码，区别是决赛加了一个数量极少类别的过滤方案。具体代码在 ```mfpsg/mmdet/models/detectors/mask2formerrelation.py``` 的第```805-808``` 行增加了以下代码：
+
+```python
+# 数量极少丢弃
+for ratio_th, weight in [[[0, 0.001/100], -9999],  ]:
+    mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
+    relationship_output = (relationship_output + weight) * mask + relationship_output
+```
+
 + 调整 `wqx/infer_p.py` 中路径
 ```python
 if __name__ == '__main__':
