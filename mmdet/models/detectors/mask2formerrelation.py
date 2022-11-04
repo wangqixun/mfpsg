@@ -821,16 +821,6 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
                 mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
                 relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
 
-            # for idx_rela in [8, 11, 19, 25, 26, 29, 31, 32, 34, 35, 36, 39, 40, 41, 42, 51, 53, 54]:
-            # for idx_rela in [50, 25, 40, 29]:  # 0.5+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 300
-            # for idx_rela in [9, 27, 39, 8, 26, ]:  # 0.3+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
-            # for idx_rela in [18, 42, 13, 37, 43, 32]:  # 0.2+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
-            # for idx_rela in [12, 24, 55, 17, 44, ]:  # 0.1+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
-
             # find topk
             if relationship_output.shape[1] > 1:
                 _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=20)
