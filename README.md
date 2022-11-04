@@ -90,7 +90,7 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 + 初赛、决赛方案区别
 
-初赛、决赛均适用本repo代码，区别是决赛加了一个数量极少类别的过滤方案。具体代码在 ```mfpsg/mmdet/models/detectors/mask2formerrelation.py``` 的第```805-808``` 行增加了以下代码：
+初赛、决赛均适用本repo代码，区别是决赛加了一个数量极少类别的过滤方案。具体在 ```mfpsg/mmdet/models/detectors/mask2formerrelation.py``` 的第```805-808``` 行增加了以下代码；复现初赛方案只需注释掉即可
 
 ```python
 # 数量极少丢弃
