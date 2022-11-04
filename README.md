@@ -105,6 +105,7 @@ if __name__ == '__main__':
 python wqx/infer_p.py
 ```
 + 打包
+
 输出格式为初赛、决赛提交的zip格式
 ```
 cd submit/
