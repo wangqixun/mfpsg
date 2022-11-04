@@ -85,7 +85,7 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 <br>
 
 ## Submit
-+ 调整 `wqx/infer_p.py` 中 `cfg` 和 `ckp`
++ 调整 `wqx/infer_p.py` 中路径
 ```python
 if __name__ == '__main__':
     # TODO 
