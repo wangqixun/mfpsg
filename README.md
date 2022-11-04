@@ -49,12 +49,12 @@ python wqx/main.py
 
 <br>
 
-## (可能)需要的一些预训练权重
-### 分割部分:
+## 需要的一些预训练权重
++ 分割部分:
 [mask2former](https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former)，
 [预训练权重](https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former)
 
-### 关系分类：
++ 关系分类：
 [transformers](https://github.com/huggingface/transformers)，
 [预训练权重](https://huggingface.co/hfl/chinese-roberta-wwm-ext)
 
@@ -88,7 +88,7 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 ## Infer and Submit
 
-### 初赛、决赛方案区别
++ 初赛、决赛方案区别
 
 初赛、决赛均适用本repo代码，区别是决赛加了一个数量极少类别的过滤方案。具体代码在 ```mfpsg/mmdet/models/detectors/mask2formerrelation.py``` 的第```805-808``` 行增加了以下代码：
 
