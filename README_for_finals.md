@@ -5,7 +5,7 @@
 
 Panoptic Scene Graph Generation 在全景分割的基础上，需要为其中具有位置、语义关系的两个“物体”（或者说是“实体”）进行“关系”的建模。
 
-    我们认为，主、宾实体的检测，与关系的建立是两大核心步骤，并且前者很大程度上决定了后者的召回上限。
+我们认为，主、宾实体的检测，与关系的建立是两大核心步骤，并且前者很大程度上决定了后者的召回上限。
 在本次比赛中，我们将主、宾实体的检测与关系的建立进行二阶段训练。
 相比于一阶段端到端的训练方案，二阶段方案由于在关系GT的匹配上不需要使用匈牙利匹配，训练过程更加稳定，且全景分割的精度更高。
 在获得每个实体的 mask 后，依据 mask 为每一个实体划分成 L 个 token，并额外增加一个 cls token，随后所有实体的 N * (L+1) 个token送入 transformer 进行全局建模，得到 [bs, N*(L+1), 768] 维张量。 随后在实体粒度上进行全局池化，将一个实体的多个 token 收紧为 1 个token，即得到 [bs, N, 768] 维张量。
@@ -22,6 +22,8 @@ GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案�
 
 ## 实现细节
 全景分割部分采用开源的[Mask2Former](https://github.com/open-mmlab/mmdetection/tree/master/configs/mask2former)预训练方案与权重，
+transformer 部分采用开源的[transformers](https://github.com/huggingface/transformers)
+
 
 
 
