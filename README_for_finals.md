@@ -38,6 +38,11 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 
 ## 对模型性能有影响的训练/推理策略
++ #### 常规的数据增强
+常规的数据增强可以提升全景分割、R20和mR20的精度
+
+
+
 + #### Transformer
 关系部分的建模使用到了 transformer 模型，经过多个消融实验，显示使用 [hfl/chinese-roberta-wwm-ext-large](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large?text=%E5%B7%B4%E9%BB%8E%E6%98%AF%5BMASK%5D%E5%9B%BD%E7%9A%84%E9%A6%96%E9%83%BD%E3%80%82) 的前2层精度最高。
 
@@ -55,4 +60,4 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 + #### 多标签分类loss
 
-关系的预测本质上是一个多标签问题，存在 N 个实体的情况下，需要对 56*N*N 个预测值进行监督，一般来说，真正“有关系”的正样本对不会超过20个，即存在极其严重的类别不均衡问题。为了解决这一问题，我们借鉴了[将“softmax+交叉熵”推广到多标签分类问题](https://kexue.fm/archives/7359)的方法，显著提升了训练稳定性和精度
+关系的预测本质上是一个多标签问题，存在 N 个实体的情况下，需要对 ```56 * N * N``` 个预测值进行监督，一般来说，真正“有关系”的正样本对不会超过20个，即存在极其严重的类别不均衡问题。为了解决这一问题，我们借鉴了[将“softmax+交叉熵”推广到多标签分类问题](https://kexue.fm/archives/7359)的方法，显著提升了训练稳定性和精度
