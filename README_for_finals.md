@@ -61,3 +61,6 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 + #### 多标签分类loss
 
 关系的预测本质上是一个多标签问题，存在 N 个实体的情况下，需要对 ```56 * N * N``` 个预测值进行监督，一般来说，真正“有关系”的正样本对不会超过20个，即存在极其严重的类别不均衡问题。为了解决这一问题，我们借鉴了[将“softmax+交叉熵”推广到多标签分类问题](https://kexue.fm/archives/7359)的方法，显著提升了训练稳定性和精度
+
++ #### Focal loss
+focal loss 可以进一步缓解长尾问题，精度小幅度提升
