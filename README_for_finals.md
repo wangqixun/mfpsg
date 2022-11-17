@@ -15,6 +15,8 @@ GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案�
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
 
 
+![img](./imgs/mfpsg_model.drawio.pdf)
+
 
 
 
@@ -32,7 +34,7 @@ transformer 部分采用开源的[transformers](https://github.com/huggingface/t
 # 8卡训练
 bash tools/dist_train.sh configs/psg/submit_cfg.py 8 
 ```
-更多细节可[参阅](./README.md)
+更多环境安装、训练、推理细节可[参阅](./README.md)
 
 
 ## 对模型性能有影响的训练/推理策略
