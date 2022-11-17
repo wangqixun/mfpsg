@@ -32,10 +32,11 @@ transformer 部分采用开源的[transformers](https://github.com/huggingface/t
 # 8卡训练
 bash tools/dist_train.sh configs/psg/submit_cfg.py 8 
 ```
+更多细节可[参阅](./README.md)
 
 
 ## 对模型性能有影响的训练/推理策略
-todo
+
 
 
 
