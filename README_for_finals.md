@@ -38,8 +38,20 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 
 ## 对模型性能有影响的训练/推理策略
++ #### Transformer
+关系部分的建模使用到了 transformer 模型，经过多个消融实验，显示使用 [hfl/chinese-roberta-wwm-ext-large](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large?text=%E5%B7%B4%E9%BB%8E%E6%98%AF%5BMASK%5D%E5%9B%BD%E7%9A%84%E9%A6%96%E9%83%BD%E3%80%82) 的前2层精度最高。
 
++ #### 置信度连乘
 
+最终输出的关系 predict 不仅与关系模型的输出相关，而且与 mask 精度呈现正相关。
+```python
+最终输出的分数 = 主语 mask 置信度 * 谓语关系置信度 * 宾语 mask 置信度
+```
+可以提高模型精度
 
++ #### Mask抖动
 
+在训练阶段，只有gt的mask，非常准确。但在infer阶段，会出现大量置信度很低的mask，由此会造成训练-推理阶段的差异。为此，在训练阶段，对于mask进行小幅度膨胀、腐蚀的增强，此外随机生成一些假的mask作为负样本。在不增加任何推理成本的情况下，可提升模型精度
+
++ #### 
 
