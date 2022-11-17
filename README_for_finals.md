@@ -15,7 +15,7 @@ GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案�
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
 
 
-![img](./imgs/mfpsg_model.drawio.pdf)
+![img](./imgs/mfpsg_model.jpg)
 
 
 
