@@ -19,7 +19,7 @@ GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案�
 最终，单张图像可以在全流程(包含resize、infer、后处理等)```0.36 +- 0.02```的时间内完成推理，且在精度上具有显著优势
 
 
- <img src="./imgs/WX20221118-110559%402x.png" width = "400"  alt=""/> <img src="./imgs/WX20221118-111022%402x.png" width = "410"  alt=""/>
+ <img src="./imgs/WX20221118-110559%402x.png" width = "400"  alt=""/> <img src="./imgs/WX20221118-111022%402x.png" width = "425"  alt=""/>
  
 
 
