@@ -14,9 +14,11 @@ Panoptic Scene Graph Generation 在全景分割的基础上，需要为其中具
 GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案。它将两两关系的建模直接使用 self-attention 实现，不仅将嵌套问题离散化，而且精度、速度均有提升。
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
 
- <img src="./imgs/mfpsg_model.jpg" width = "500" alt="" align='center' />
+<div align=center>
+<img src="./imgs/mfpsg_model.jpg" width = "550" />
+</div>
 
-最终，单张图像可以在全流程(包含resize、infer、后处理等)```0.36 +- 0.02```的时间内完成推理，且在精度上具有显著优势
+最终，单张图像可以在全流程(包含resize、infer、后处理等)```0.36 +- 0.02```秒的时间内完成推理，且在精度上具有显著优势
 
 
  <img src="./imgs/WX20221118-110559%402x.png" width = "400"  alt=""/> <img src="./imgs/WX20221118-111022%402x.png" width = "415"  alt=""/>
