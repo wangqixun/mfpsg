@@ -17,7 +17,7 @@ GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案�
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
 有多少个类，self-attention 的 head 就设成多少。
 
-![](http://latex.codecogs.com/gif.latex?\\sigma=\sqrt{\frac{1}{n}{\sum_{k=1}^n(x_i-\bar{x})^2}})
+$\sigma$
 
 > 可能有读者会问：这种设计的复杂度明明就是```O()```呀，不会特别慢吗？如果现在还是RNN/CNN的时代，那么它可能就显得很慢了，但如今是 Transformer 遍布的时代，Transformer的每一层都是```\sigma```的复杂度，多GlobalPointer一层不多，少GlobalPointer一层也不少，关键是```\sigma```的复杂度仅仅是空间复杂度，如果并行性能好的话，时间复杂度甚至可以降到```\sigma```，所以不会有明显感知。
 
