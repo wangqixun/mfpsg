@@ -34,7 +34,7 @@ model = dict(
     ),
     panoptic_head=dict(
         type='Mask2FormerRelationHead',
-        in_channels=[96, 192, 384, 768]),
+        in_channels=[96, 192, 384, 768],
         strides=[4, 8, 16, 32],
         feat_channels=256,
         out_channels=256,
