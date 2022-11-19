@@ -14,8 +14,10 @@ Panoptic Scene Graph Generation 在全景分割的基础上，需要为其中具
 同样是对任意两个 token 的关系进行建模，[GlobalPointer](https://kexue.fm/archives/8373) 给出了非常优秀的解决方案。
 GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案。
 它将两两关系的建模直接使用 self-attention 实现，不仅将嵌套问题离散化，而且精度、速度均有提升。
+本质上是 Multi-Head Attention 的一个简化版，有多少种实体就对应多少个head，相比 Multi-Head Attention 去掉了 V 相关的运算。
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
-有多少个类，self-attention 的 head 就设成多少。
+有多少个类，计算 attention 的 head 就设成多少。
+
 
 > 可能有读者会问：这种设计的复杂度明明就是 $O(n^{2})$ 呀，不会特别慢吗？如果现在还是RNN/CNN的时代，那么它可能就显得很慢了，但如今是 Transformer 遍布的时代，Transformer的每一层都是 $O(n^{2})$ 的复杂度，多GlobalPointer一层不多，少GlobalPointer一层也不少，关键是 $O(n^{2})$ 的复杂度仅仅是空间复杂度，如果并行性能好的话，时间复杂度甚至可以降到 $O(n)$，所以不会有明显感知。
 
