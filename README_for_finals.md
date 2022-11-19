@@ -3,20 +3,29 @@
 
 ## 方法模型设计/改进思路
 
-Panoptic Scene Graph Generation 在全景分割的基础上，需要为其中具有位置、语义关系的两个“物体”（或者说是“实体”）进行“关系”的建模。
+Panoptic Scene Graph Generation 在全景分割的基础上，需要为其中具有位置、语义关系的两个“物体”（或者说是“实体”）进行“关系”的建模。我们认为，主、宾实体的检测，与关系的建立是两大核心步骤，并且前者很大程度上决定了后者的召回上限。
 
-我们认为，主、宾实体的检测，与关系的建立是两大核心步骤，并且前者很大程度上决定了后者的召回上限。
 在本次比赛中，我们将主、宾实体的检测与关系的建立进行二阶段训练。
 相比于一阶段端到端的训练方案，二阶段方案由于在关系GT的匹配上不需要使用匈牙利匹配，训练过程更加稳定，且全景分割的精度更高。
-在获得每个实体的 mask 后，依据 mask 为每一个实体划分成 L 个 token，并额外增加一个 cls token，随后所有实体的 N * (L+1) 个token送入 transformer 进行全局建模，得到 [bs, N*(L+1), 768] 维张量。 随后在实体粒度上进行全局池化，将一个实体的多个 token 收紧为 1 个token，即得到 [bs, N, 768] 维张量。
-在得到实体级别 embedding 后，只需用对应的 embedding 建模任意两个 token 的关系即可。
-同样是对任意两个 token 进行建模，[GlobalPointer](https://kexue.fm/archives/8373) 给出了非常优秀的解决方案。
-GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案。它将两两关系的建模直接使用 self-attention 实现，不仅将嵌套问题离散化，而且精度、速度均有提升。
+
+在获得每个实体的 mask 后，依据 mask 为每一个实体划分成 L 个 token，并额外增加一个 cls token，随后所有实体的 N * (L+1) 个token送入 transformer 进行全局建模，得到 [bs, N*(L+1), 768] 维张量。 然后在实体粒度上进行全局池化，将一个实体的多个 token 收紧为 1 个token，得到 [bs, N, 768] 维张量。
+
+得到实体级别 embedding 后，只需用对应的 embedding 建模任意两个 token 的关系即可。
+同样是对任意两个 token 的关系进行建模，[GlobalPointer](https://kexue.fm/archives/8373) 给出了非常优秀的解决方案。
+GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案。
+它将两两关系的建模直接使用 self-attention 实现，不仅将嵌套问题离散化，而且精度、速度均有提升。
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
+有多少个类，self-attention 的 head 就设成多少
+
+> 可能有读者会问：这种设计的复杂度明明就是```\sigma```呀，不会特别慢吗？如果现在还是RNN/CNN的时代，那么它可能就显得很慢了，但如今是 Transformer 遍布的时代，Transformer的每一层都是```\sigma```的复杂度，多GlobalPointer一层不多，少GlobalPointer一层也不少，关键是```\sigma```的复杂度仅仅是空间复杂度，如果并行性能好的话，时间复杂度甚至可以降到```\sigma```，所以不会有明显感知。
+
+模型整体结构如下：
 
 <div align=center>
 <img src="./imgs/mfpsg_model.jpg" width = "550" />
 </div>
+
+
 
 最终，单张图像可以在全流程(包含resize、infer、后处理等)```0.36 +- 0.02```秒的时间内完成推理，且在精度上具有[显著优势](https://www.cvmart.net/race/10349/rank)
 
@@ -43,10 +52,11 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 
 ## 对模型性能有影响的训练/推理策略
++ #### k、q-size
+
+
 + #### 常规的数据增强
 常规的数据增强可以提升全景分割、R20和mR20的精度
-
-
 
 + #### Transformer
 关系部分的建模使用到了 transformer 模型，经过多个消融实验，显示使用 [hfl/chinese-roberta-wwm-ext-large](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large?text=%E5%B7%B4%E9%BB%8E%E6%98%AF%5BMASK%5D%E5%9B%BD%E7%9A%84%E9%A6%96%E9%83%BD%E3%80%82) 的前2层精度最高。
