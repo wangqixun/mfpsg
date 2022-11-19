@@ -8,7 +8,7 @@ Panoptic Scene Graph Generation 在全景分割的基础上，需要为其中具
 在本次比赛中，我们将主、宾实体的检测与关系的建立进行二阶段训练。
 相比于一阶段端到端的训练方案，二阶段方案由于在关系GT的匹配上不需要使用匈牙利匹配，训练过程更加稳定，且全景分割的精度更高。
 
-在获得每个实体的 $mask$ 后，依据 $mask$ 为每一个实体划分成 $L$ 个 $token$，并额外增加一个 $cls token$，随后所有实体的 $N * (L+1)$ 个 $token$ 送入 $transformer$ 进行全局建模，得到 [bs, N*(L+1), 768] 维张量。 然后在实体粒度上进行全局池化，将一个实体的多个 token 收紧为 1 个token，得到 [bs, N, 768] 维张量。
+在获得每个实体的 mask 后，依据 mask 为每一个实体划分成 L 个 token，并额外增加一个 cls token，随后所有实体的 $N * (L+1)$ 个token送入 transformer 进行全局建模，得到 $[bs, N*(L+1), 768]$ 维张量。 然后在实体粒度上进行全局池化，将一个实体的多个 token 收紧为 1 个token，得到 $[bs, N, 768]$ 维张量。
 
 得到实体级别 embedding 后，只需用对应的 embedding 建模任意两个 token 的关系即可。
 同样是对任意两个 token 的关系进行建模，[GlobalPointer](https://kexue.fm/archives/8373) 给出了非常优秀的解决方案。
@@ -17,7 +17,7 @@ GlobalPointer 是为解决 NLP 任务中“实体抽取”问题提出的方案�
 我们借鉴 GlobalPointer 方法，通过 self-attention layer 实现两两实体关系的建模。
 有多少个类，self-attention 的 head 就设成多少。
 
-> 可能有读者会问：这种设计的复杂度明明就是```O()```呀，不会特别慢吗？如果现在还是RNN/CNN的时代，那么它可能就显得很慢了，但如今是 Transformer 遍布的时代，Transformer的每一层都是```\sigma```的复杂度，多GlobalPointer一层不多，少GlobalPointer一层也不少，关键是```\sigma```的复杂度仅仅是空间复杂度，如果并行性能好的话，时间复杂度甚至可以降到```\sigma```，所以不会有明显感知。
+> 可能有读者会问：这种设计的复杂度明明就是 $O(n_{2})$ 呀，不会特别慢吗？如果现在还是RNN/CNN的时代，那么它可能就显得很慢了，但如今是 Transformer 遍布的时代，Transformer的每一层都是 $O(n_{2})$ 的复杂度，多GlobalPointer一层不多，少GlobalPointer一层也不少，关键是 $O(n_{2})$ 的复杂度仅仅是空间复杂度，如果并行性能好的话，时间复杂度甚至可以降到 $O(n)$，所以不会有明显感知。
 
 模型整体结构如下：
 
