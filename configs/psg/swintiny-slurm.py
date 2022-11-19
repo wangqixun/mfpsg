@@ -13,7 +13,6 @@ cache_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/tmp'
 model = dict(
     type='Mask2FormerRelation',
     backbone=dict(
-        _delete_=True,
         type='SwinTransformer',
         embed_dims=96,
         depths=depths,
