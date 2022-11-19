@@ -54,8 +54,8 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 
 ## 对模型性能有影响的训练/推理策略
-+ #### k、q-size
-
++ #### Query、Key-size
+在关系建模的 self-attention 部分，query 和 key 的 size 可以适当调大。经过消融实验，1024的参数效果最好。为了节省现存开销，比赛方案使用了512的size。
 
 + #### 常规的数据增强
 常规的数据增强可以提升全景分割、R20和mR20的精度
