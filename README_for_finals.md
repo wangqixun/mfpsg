@@ -128,7 +128,7 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 常规的数据增强可以提升全景分割、R20和mR20的精度
 
 + #### Transformer
-关系部分的建模使用到了 transformer 模型，经过多个消融实验，显示使用 [hfl/chinese-roberta-wwm-ext-large](https://huggingface.co/hfl/chinese-roberta-wwm-ext-large?text=%E5%B7%B4%E9%BB%8E%E6%98%AF%5BMASK%5D%E5%9B%BD%E7%9A%84%E9%A6%96%E9%83%BD%E3%80%82) 的前2层精度最高。
+关系部分的建模使用到了 transformer 模型，经过多个消融实验，显示使用 [hfl/chinese-roberta-wwm-ext](https://huggingface.co/hfl/chinese-roberta-wwm-ext?text=%E7%94%9F%E6%B4%BB%E7%9A%84%E7%9C%9F%E8%B0%9B%E6%98%AF%5BMASK%5D%E3%80%82) 的前2层精度最高。
 
 + #### 置信度连乘
 
