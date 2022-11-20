@@ -119,6 +119,8 @@ bash tools/dist_train.sh configs/psg/submit_cfg.py 8
 
 
 ## 对模型性能有影响的训练/推理策略
+除了在上述部分提到的idea外，以下trick对训练或推理也有积极的效果。
+
 + #### 关系建模 Query、Key-size
 在关系建模的 self-attention 部分，query 和 key 的 size 可以适当调大。经过消融实验，1024的参数效果最好。为了节省现存开销，比赛方案使用了512的size。
 
