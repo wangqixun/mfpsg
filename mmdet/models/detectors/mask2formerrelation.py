@@ -782,24 +782,7 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             meta=img_metas[0]
         )
 
-        if not hasattr(self, 'rela_cls_ratio'):
-            # 每类关系数量占比
-            rela_cls_ratio = [
-                14.90037819733397, 4.264230886861559, 17.104291458111103, 20.223487024176283, 3.7487785046659257, 
-                7.82018096779728, 1.4676592792618066, 0.054454448480870075, 0.003729756745265074, 0.044011129594127875, 
-                0.07161132950908942, 2.7063114943643374, 0.43787344189411964, 0.076460013277934, 6.994785800070119, 
-                0.5661770739312382, 2.030479572122306, 0.3241158611635349, 0.0302110296366471, 0.06676264574024482, 
-                1.112213461438045, 3.903563409594426, 0.88954698374572, 1.9957928343913411, 0.03356781070738566, 
-                0.006340586466950625, 0.478527790417509, 0.043638153919601366, 0.02610829721685552, 0.0604220592732942, 
-                0.050351716061078494, 0.005594635117897611, 0.13166041310785712, 0.014546051306533789, 0.004475708094318089, 
-                0.008205464839583163, 0.7213349545342653, 0.36514318536145074, 0.029092102613067577, 0.1204711428720619, 
-                0.0029838053962120592, 0.00708653781600364, 0.15963358869734517, 0.06825454843835084, 0.05184361875918452, 
-                0.22975301550832855, 0.7687028651991317, 2.5343697084076173, 2.1576642771358454, 0.21334208582916223, 
-                0.02797317558948805, 0.27712092617319495, 0.020513662098957906, 0.010443318886742206, 0.2237854047159044, 
-                0.3099427855315276
-            ]
-            rela_cls_ratio = torch.tensor(rela_cls_ratio, dtype=dtype, device=device) / 100.
-            self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
+
 
         
         relation_res = []
@@ -816,20 +799,6 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             entity_score_tensor = torch.tensor(entity_score_list, device=device, dtype=dtype)
             relationship_output = relationship_output * entity_score_tensor[None, :, None]
             relationship_output = relationship_output * entity_score_tensor[None, None, :]
-
-            # relationship weight
-            for ratio_th, weight in [[[0, 1/100], 10],  ]:
-                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-                relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
-            # for idx_rela in [8, 11, 19, 25, 26, 29, 31, 32, 34, 35, 36, 39, 40, 41, 42, 51, 53, 54]:
-            # for idx_rela in [50, 25, 40, 29]:  # 0.5+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 300
-            # for idx_rela in [9, 27, 39, 8, 26, ]:  # 0.3+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
-            # for idx_rela in [18, 42, 13, 37, 43, 32]:  # 0.2+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
-            # for idx_rela in [12, 24, 55, 17, 44, ]:  # 0.1+
-            #     relationship_output[idx_rela] = relationship_output[idx_rela] * 150
 
             # find topk
             if relationship_output.shape[1] > 1:
