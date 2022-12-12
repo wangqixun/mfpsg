@@ -12,6 +12,7 @@ from mmdet.models.dense_heads import GARPNHead, RPNHead
 from mmdet.models.roi_heads.mask_heads import FusedSemanticHead
 from mmdet.models.roi_heads.bbox_heads import Shared2FCBBoxHead
 from mmdet.models.roi_heads.mask_heads import FCNMaskHead
+from mmdet.models.seg_heads.panoptic_fpn_head import PanopticFPNHead
 
 
 def replace_ImageToTensor(pipelines):
@@ -143,7 +144,7 @@ class NumClassCheckHook(Hook):
             for name, module in model.named_modules():
                 if hasattr(module, 'num_classes') and not isinstance(
                         module, (RPNHead, VGG, FusedSemanticHead, GARPNHead,
-                        Shared2FCBBoxHead, FCNMaskHead
+                        Shared2FCBBoxHead, FCNMaskHead, PanopticFPNHead
                         )):
                     assert module.num_classes == len(dataset.CLASSES), \
                         (f'The `num_classes` ({module.num_classes}) in '
