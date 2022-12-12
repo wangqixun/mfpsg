@@ -417,8 +417,6 @@ class PanopticFPNRelation(TwoStageDetector):
         losses.update(semantic_loss)
 
 
-        embed()
-        xxxxxxxxx
         mask_features = x[0]
 
 
