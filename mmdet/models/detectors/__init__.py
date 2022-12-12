@@ -45,6 +45,7 @@ from .yolo import YOLOV3
 from .yolof import YOLOF
 from .yolox import YOLOX
 from .mask2formerrelation import Mask2FormerRelation
+from .panoptic_two_stage_segmentor_relation import PanopticFPNRelation
 
 __all__ = [
     'ATSS', 'BaseDetector', 'SingleStageDetector', 'TwoStageDetector', 'RPN',
@@ -56,5 +57,6 @@ __all__ = [
     'SOLOv2', 'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
     'TwoStagePanopticSegmentor', 'PanopticFPN', 'QueryInst', 'LAD', 'TOOD',
     'MaskFormer', 'DDOD', 'Mask2Former',
-    'Mask2FormerRelation'
+    'Mask2FormerRelation',
+    'PanopticFPNRelation'
 ]

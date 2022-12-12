@@ -775,24 +775,24 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
         )
 
         # from psg_tra_val.json
-        if not hasattr(self, 'rela_cls_ratio'):
-            # 每类关系数量占比
-            rela_cls_ratio = [
-                14.90037819733397, 4.264230886861559, 17.104291458111103, 20.223487024176283, 3.7487785046659257, 
-                7.82018096779728, 1.4676592792618066, 0.00054454448480870075, 0.0003729756745265074, 0.00044011129594127875, 
-                0.07161132950908942, 2.7063114943643374, 0.43787344189411964, 0.00076460013277934, 6.994785800070119, 
-                0.5661770739312382, 2.030479572122306, 0.3241158611635349, 0.0302110296366471, 0.06676264574024482, 
-                1.112213461438045, 3.903563409594426, 0.88954698374572, 1.9957928343913411, 0.0003356781070738566, 
-                0.0006340586466950625, 0.478527790417509, 0.043638153919601366, 0.0002610829721685552, 0.0604220592732942, 
-                0.050351716061078494, 0.0005594635117897611, 0.00013166041310785712, 0.014546051306533789, 0.0004475708094318089, 
-                0.0008205464839583163, 0.0007213349545342653, 0.36514318536145074, 0.00029092102613067577, 0.1204711428720619, 
-                0.00029838053962120592, 0.000708653781600364, 0.15963358869734517, 0.06825454843835084, 0.05184361875918452, 
-                0.22975301550832855, 0.7687028651991317, 2.5343697084076173, 2.1576642771358454, 0.21334208582916223, 
-                0.02797317558948805, 0.27712092617319495, 0.00020513662098957906, 0.00010443318886742206, 0.2237854047159044, 
-                0.3099427855315276
-            ]
-            rela_cls_ratio = torch.tensor(rela_cls_ratio, dtype=dtype, device=device) / 100.
-            self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
+        # if not hasattr(self, 'rela_cls_ratio'):
+        #     # 每类关系数量占比
+        #     rela_cls_ratio = [
+        #         14.90037819733397, 4.264230886861559, 17.104291458111103, 20.223487024176283, 3.7487785046659257, 
+        #         7.82018096779728, 1.4676592792618066, 0.00054454448480870075, 0.0003729756745265074, 0.00044011129594127875, 
+        #         0.07161132950908942, 2.7063114943643374, 0.43787344189411964, 0.00076460013277934, 6.994785800070119, 
+        #         0.5661770739312382, 2.030479572122306, 0.3241158611635349, 0.0302110296366471, 0.06676264574024482, 
+        #         1.112213461438045, 3.903563409594426, 0.88954698374572, 1.9957928343913411, 0.0003356781070738566, 
+        #         0.0006340586466950625, 0.478527790417509, 0.043638153919601366, 0.0002610829721685552, 0.0604220592732942, 
+        #         0.050351716061078494, 0.0005594635117897611, 0.00013166041310785712, 0.014546051306533789, 0.0004475708094318089, 
+        #         0.0008205464839583163, 0.0007213349545342653, 0.36514318536145074, 0.00029092102613067577, 0.1204711428720619, 
+        #         0.00029838053962120592, 0.000708653781600364, 0.15963358869734517, 0.06825454843835084, 0.05184361875918452, 
+        #         0.22975301550832855, 0.7687028651991317, 2.5343697084076173, 2.1576642771358454, 0.21334208582916223, 
+        #         0.02797317558948805, 0.27712092617319495, 0.00020513662098957906, 0.00010443318886742206, 0.2237854047159044, 
+        #         0.3099427855315276
+        #     ]
+        #     rela_cls_ratio = torch.tensor(rela_cls_ratio, dtype=dtype, device=device) / 100.
+        #     self.rela_cls_ratio = rela_cls_ratio.reshape([-1, 1, 1])
         
         relation_res = []
         if entity_res is not None:
@@ -802,10 +802,10 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
             # 对角线丢弃
             for idx_i in range(relationship_output.shape[1]):
                 relationship_output[:, idx_i, idx_i] = -9999
-            # 数量极少丢弃
-            for ratio_th, weight in [[[0, 0.001/100], -9999],  ]:
-                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-                relationship_output = (relationship_output + weight) * mask + relationship_output
+            # # 数量极少丢弃
+            # for ratio_th, weight in [[[0, 0.001/100], -9999],  ]:
+            #     mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
+            #     relationship_output = (relationship_output + weight) * mask + relationship_output
 
             relationship_output = torch.exp(relationship_output)
             # relationship_output = torch.sigmoid(relationship_output)
@@ -817,13 +817,14 @@ class Mask2FormerRelationForinfer(MaskFormerRelation):
 
             # 长尾类别扩大
             # relationship weight
-            for ratio_th, weight in [[[0, 1/100], 10],  ]:
-                mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
-                relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
+            # for ratio_th, weight in [[[0, 1/100], 10],  ]:
+            #     mask = ((self.rela_cls_ratio > ratio_th[0]) & (self.rela_cls_ratio < ratio_th[1])) * 1
+            #     relationship_output = relationship_output * mask * weight + relationship_output * (1 - mask)
 
             # find topk
             if relationship_output.shape[1] > 1:
-                _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=20)
+                # _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=20)
+                _, topk_indices = torch.topk(relationship_output.reshape([-1,]), k=100)
 
                 # subject, object, cls
                 for index in topk_indices:
