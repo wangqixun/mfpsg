@@ -13,7 +13,7 @@ cache_dir = '/mnt/mmtech01/usr/guiwan/workspace/mfpsg_output/tmp'
 
 # model settings
 model = dict(
-    type='PanopticFPN',
+    type='PanopticFPNRelation',
     backbone=dict(
         type='ResNet',
         depth=50,
