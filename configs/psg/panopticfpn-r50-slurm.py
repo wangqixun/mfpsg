@@ -93,6 +93,22 @@ model = dict(
         loss_seg=dict(
             type='CrossEntropyLoss', ignore_index=255, loss_weight=0.5)
     ),
+    relationship_head=dict(
+        type='BertTransformer',
+        pretrained_transformers=pretrained_transformers, 
+        cache_dir=cache_dir,
+        input_feature_size=256,
+        layers_transformers=2,
+        feature_size=768,
+        num_classes=num_classes,
+        num_cls=num_relation,
+        cls_qk_size=512,
+        loss_weight=50,
+        num_entity_max=30,
+        use_background_feature=False,
+        loss_mode='v5',
+        loss_alpha=1,
+    ),
     panoptic_fusion_head=dict(
         type='HeuristicFusionHead',
         num_things_classes=num_things_classes,
